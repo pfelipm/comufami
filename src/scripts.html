@@ -1,0 +1,2446 @@
+<script>
+/**
+ * Lógica de cliente para la Web App ComuFami.
+ */
+
+// Estado global de la aplicación
+const state = {
+    user: null,
+    view: 'loading',
+    grupos: [],
+    allEstudiantes: [], // Lista completa para administración
+    allUsuarios: [], // Lista completa para administración
+    estudiantes: [], // Cache de estudiantes del docente (reducida)
+    allRecords: [], // Cache de todos los registros (para Dashboard Global)
+    recordsFamilia: [], // Cache de registros para el portal de familia
+    currentRecord: null, // Temporal para previsualización
+    appName: '',
+    accentColor: '',
+    logoUrl: '',
+    footerLogoUrl: '',
+    appFooterLogoLinkUrl: '',
+    footerText: '',
+    token: null, // Token de acceso familia
+    pin: null, // PIN del progenitor actual
+    parentIndex: null, // 1 o 2 (según el PIN introducido)
+    quill: null, // Instancia del editor enriquecido
+    eSortAsc: true,
+    uSortAsc: true,
+    sortAsc: false, // Para el portal de familia
+    dashboardChart: null, // Instancia ApexCharts (Familias)
+    dashboardChartGlobal: null, // Instancia ApexCharts (Staff)
+    dashboardChartType: 'bar' // 'bar' para columnas apiladas, 'line' para líneas
+};
+
+/**
+ * Muestra u oculta el spinner de carga global.
+ */
+function toggleLoader(show) {
+    const loader = document.getElementById('global-loader');
+    if (loader) {
+        if (show) loader.classList.remove('hidden');
+        else loader.classList.add('hidden');
+    }
+}
+
+/**
+ * Muestra un modal de alerta (estilo alert).
+ */
+function showAlert(title, message, type = 'info') {
+    const modal = document.getElementById('modal-dialog');
+    const titleEl = document.getElementById('dialog-title');
+    const msgEl = document.getElementById('dialog-message');
+    const iconEl = document.getElementById('dialog-icon');
+    const iconContainer = document.getElementById('dialog-icon-container');
+    const btnCancel = document.getElementById('dialog-cancel');
+    const btnOk = document.getElementById('dialog-ok');
+
+    titleEl.innerText = title;
+    msgEl.innerText = message;
+    btnCancel.classList.add('hidden');
+    
+    // Configurar icono y colores según tipo
+    iconContainer.className = 'rounded-full p-2 ';
+    btnOk.className = 'px-6 py-2 text-sm font-bold text-white rounded-md shadow-sm transition-all ';
+    
+    if (type === 'error') {
+        iconContainer.classList.add('bg-red-100', 'text-red-600');
+        iconEl.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>';
+        btnOk.classList.add('bg-red-600', 'hover:bg-red-700');
+    } else if (type === 'success') {
+        iconContainer.classList.add('bg-green-100', 'text-green-600');
+        iconEl.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>';
+        btnOk.classList.add('bg-green-600', 'hover:bg-green-700');
+    } else {
+        iconContainer.classList.add('bg-blue-100', 'text-blue-600');
+        iconEl.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+        btnOk.classList.add('bg-blue-600', 'hover:bg-blue-700');
+    }
+
+    btnOk.onclick = () => { modal.classList.add('hidden'); };
+    modal.classList.remove('hidden');
+}
+
+/**
+ * Muestra un modal de confirmación (estilo confirm).
+ */
+function showConfirm(title, message, callback, type = 'warning') {
+    const modal = document.getElementById('modal-dialog');
+    const titleEl = document.getElementById('dialog-title');
+    const msgEl = document.getElementById('dialog-message');
+    const iconEl = document.getElementById('dialog-icon');
+    const iconContainer = document.getElementById('dialog-icon-container');
+    const btnCancel = document.getElementById('dialog-cancel');
+    const btnOk = document.getElementById('dialog-ok');
+
+    titleEl.innerText = title;
+    msgEl.innerText = message;
+    btnCancel.classList.remove('hidden');
+    
+    iconContainer.className = 'rounded-full p-2 bg-orange-100 text-orange-600';
+    iconEl.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>';
+    btnOk.className = 'px-6 py-2 text-sm font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-md shadow-sm transition-all';
+
+    btnOk.onclick = () => { modal.classList.add('hidden'); if (callback) callback(); };
+    btnCancel.onclick = () => { modal.classList.add('hidden'); };
+    modal.classList.remove('hidden');
+}
+
+/**
+ * Gestiona el estado de carga de un botón.
+ */
+function setButtonState(btnId, isLoading, normalText) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    
+    if (isLoading) {
+        btn.disabled = true;
+        btn.classList.add('opacity-70', 'cursor-not-allowed', 'flex', 'items-center', 'justify-center', 'gap-2');
+        btn.style.minWidth = btn.offsetWidth + 'px'; // Mantener el ancho original
+        btn.innerHTML = `
+            <svg class="animate-spin h-4 w-4 text-white flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="whitespace-nowrap">Procesando...</span>
+        `;
+    } else {
+        btn.disabled = false;
+        btn.classList.remove('opacity-70', 'cursor-not-allowed', 'flex', 'items-center', 'justify-center', 'gap-2');
+        btn.style.minWidth = '';
+        btn.innerHTML = `<span>${normalText}</span>`;
+    }
+}
+
+// Inicialización al cargar el DOM
+document.addEventListener('DOMContentLoaded', () => {
+    inicializarApp();
+});
+
+/**
+ * Carga inicial de datos del usuario y configuración.
+ */
+function inicializarApp() {
+    console.log('Iniciando cliente...');
+    state.token = window.URL_TOKEN; // Capturamos el token de index.html
+
+    google.script.run
+        .withSuccessHandler(response => {
+            if (response.success) {
+                state.appName = response.appName;
+                state.accentColor = response.accentColor;
+                state.logoUrl = response.logoUrl;
+                state.footerLogoUrl = response.footerLogoUrl;
+                state.appFooterLogoLinkUrl = response.appFooterLogoLinkUrl;
+                state.footerText = response.footerText;
+
+                // Aplicar personalización visual dinámica
+                document.documentElement.style.setProperty('--accent-color', state.accentColor);
+
+                if (state.footerLogoUrl) {
+                    let logoHtml = `<img src="${state.footerLogoUrl}" alt="Logo Footer" class="h-12 w-auto grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all">`;
+                    if (state.appFooterLogoLinkUrl) {
+                        logoHtml = `<a href="${state.appFooterLogoLinkUrl}" target="_blank" class="block">${logoHtml}</a>`;
+                    }
+                    document.getElementById('footer-logo-container').innerHTML = logoHtml;
+                }
+                const footerTextEl = document.getElementById('footer-custom-text');
+                if (footerTextEl) {
+                    footerTextEl.innerText = state.footerText || `© ${new Date().getFullYear()} ${state.appName}`;
+                }
+                
+                document.getElementById('main-footer').classList.remove('hidden');
+
+                // LÓGICA DE ENRUTAMIENTO INICIAL
+                if (state.token) {
+                    // Si viene por token, ignoramos login de dominio y vamos al login por PIN
+                    renderLoginFamiliaToken();
+                } else if (response.tipo === 'PERSONAL') {
+                    state.user = response.data;
+                    document.getElementById('user-info').innerText = `${state.user.nombre} (${state.user.rol})`;
+                    document.getElementById('user-info').classList.remove('hidden');
+                    actualizarCacheGrupos(() => navegar('inicio'));
+                } else {
+                    // Es un usuario externo (Familia) sin token
+                    state.user = response.data;
+                    if (state.user.nombre !== 'Usuario Externo') {
+                        document.getElementById('user-info').innerText = `${state.user.nombre} (Familia)`;
+                        document.getElementById('user-info').classList.remove('hidden');
+                        navegar('dashboard-familia');
+                    } else {
+                        navegar('login-familia');
+                    }
+                }
+            } else {
+                mostrarError('Error al cargar la aplicación: ' + response.error);
+            }
+        })
+        .withFailureHandler(err => {
+            console.error('Error al inicializar:', err);
+            mostrarError('Error de conexión con el servidor.');
+        })
+        .obtenerDatosIniciales();
+}
+
+/**
+ * Actualiza la caché de grupos local.
+ */
+function actualizarCacheGrupos(callback) {
+    google.script.run.withSuccessHandler(response => {
+        if (response.success) {
+            state.grupos = response.data;
+            if (callback) callback();
+        }
+    }).listarGrupos();
+}
+
+/**
+ * Gestión de la navegación SPA.
+ */
+function navegar(vista) {
+    console.log('Navegando a:', vista);
+    state.view = vista;
+    const appContainer = document.getElementById('app');
+    
+    // Limpiar instancias de gráficos para evitar errores de renderizado en DOM inexistente
+    if (state.dashboardChart) { state.dashboardChart.destroy(); state.dashboardChart = null; }
+    if (state.dashboardChartGlobal) { state.dashboardChartGlobal.destroy(); state.dashboardChartGlobal = null; }
+
+    switch(vista) {
+        case 'inicio':
+            renderInicio(appContainer);
+            break;
+        case 'usuarios':
+            renderUsuarios(appContainer);
+            break;
+        case 'estudiantes':
+            renderEstudiantes(appContainer);
+            break;
+        case 'grupos':
+            renderGrupos(appContainer);
+            break;
+        case 'crear-registro':
+            renderCrearRegistro(appContainer);
+            break;
+        case 'dashboard':
+            renderDashboardGlobal(appContainer);
+            break;
+        case 'ajustes':
+            appContainer.innerHTML = '<div class="p-10 text-center">Módulo de configuración en desarrollo...</div>';
+            break;
+        case 'login-familia':
+            renderLoginFamiliaManual(appContainer);
+            break;
+        case 'dashboard-familia':
+        case 'dashboard-familia-general':
+            renderDashboardFamiliaGeneral(appContainer);
+            break;
+        default:
+            console.error('Vista no reconocida:', vista);
+            appContainer.innerHTML = `<p class="text-center text-red-500">Vista no encontrada: ${vista}</p>`;
+    }
+}
+
+/**
+ * ANOTACIONES (REGISTROS)
+ */
+function renderCrearRegistro(container) {
+    state.quill = null; // Forzar reinicialización del editor
+    container.innerHTML = `
+        <div class="fade-in w-full max-w-4xl mx-auto">
+            <div class="flex items-center gap-4 mb-6">
+                <button onclick="navegar('inicio')" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                </button>
+                <h1 class="text-2xl font-bold text-gray-800">Registrar anotación</h1>
+            </div>
+
+            <!-- Paso 1: Datos de la anotación -->
+            <div id="paso-1" class="bg-white rounded-lg shadow-md p-6">
+                <form onsubmit="event.preventDefault(); irAPaso2();">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Grupo</label>
+                            <select id="reg-grupo" required onchange="filtrarEstudiantesPorGrupo(this.value)" class="w-full border border-gray-300 rounded-md p-2">
+                                <option value="">Seleccione grupo...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Estudiante</label>
+                            <select id="reg-estudiante" required class="w-full border border-gray-300 rounded-md p-2">
+                                <option value="">Seleccione primero un grupo...</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de anotación</label>
+                        <select id="reg-tipo" required class="w-full border border-gray-300 rounded-md p-2">
+                            <option value="General">General</option>
+                            <option value="Incidencia">Incidencia</option>
+                            <option value="Felicitación">Felicitación</option>
+                            <option value="Reunión">Cita para reunión</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Descripción del seguimiento</label>
+                        <textarea id="reg-descripcion" required rows="5" class="w-full border border-gray-300 rounded-md p-2" placeholder="Detalle aquí la información relevante para la familia..."></textarea>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors font-medium">Siguiente: previsualizar notificación</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Paso 2: Previsualización editable -->
+            <div id="paso-2" class="hidden bg-white rounded-lg shadow-md p-6 border-t-4 border-orange-500">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    Vista previa de la notificación
+                </h3>
+                <p class="text-sm text-gray-600 mb-6">Revise y ajuste el correo electrónico que recibirán los progenitores (<span id="preview-destinatarios" class="font-bold text-gray-800"></span>).</p>
+                
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Asunto del email</label>
+                    <input type="text" id="notif-asunto" class="w-full border border-gray-300 rounded-md p-2 font-medium">
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Cuerpo del mensaje</label>
+                    <div id="notif-editor" class="bg-white h-64 border border-gray-300 rounded-md"></div>
+                    <p class="mt-2 text-xs text-gray-400 italic">Nota: Si la familia responde al correo, el mensaje se enviará a <span id="preview-replyto" class="font-semibold text-gray-500"></span>.</p>
+                </div>
+
+                <div class="mb-6 p-4 bg-blue-50 rounded-md border border-blue-100 flex flex-col gap-3">
+                    <label class="flex items-center gap-3 text-sm text-gray-700 cursor-pointer">
+                        <input type="checkbox" id="notif-cco" checked class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                        <span>Enviar a las familias en CCO (recomendado para proteger la privacidad)</span>
+                    </label>
+                    <label class="flex items-center gap-3 text-sm text-gray-700 cursor-pointer">
+                        <input type="checkbox" id="notif-copia" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                        <span>Enviarme una copia de este email</span>
+                    </label>
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <button onclick="volverAPaso1()" class="px-4 py-2 border border-gray-300 text-gray-600 rounded-md hover:bg-gray-50 transition-colors font-medium text-sm">Volver a editar anotación</button>
+                    <button onclick="enviarRegistroFinal()" class="bg-green-600 text-white px-8 py-3 rounded-md hover:bg-green-700 transition-colors font-bold shadow-md">Confirmar y enviar</button>
+                </div>
+            </div>
+
+            <!-- Paso 3: Éxito -->
+            <div id="paso-exito" class="hidden bg-white rounded-lg shadow-md p-10 text-center">
+                <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">¡Anotación registrada!</h2>
+                <p class="text-gray-600 mb-8">La familia ha sido notificada por correo electrónico correctamente.</p>
+                <button onclick="navegar('inicio')" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors">Volver al inicio</button>
+            </div>
+        </div>
+    `;
+    cargarEstudiantesDocente();
+}
+
+function cargarEstudiantesDocente() {
+    toggleLoader(true);
+    google.script.run.withSuccessHandler(response => {
+        toggleLoader(false);
+        if (response.success) {
+            state.estudiantes = response.data;
+            
+            // Poblamos los grupos únicos que tiene el docente
+            const gruposSet = new Set(state.estudiantes.map(e => e.grupo));
+            const selectGrupo = document.getElementById('reg-grupo');
+            
+            // Limpiar antes de añadir
+            selectGrupo.innerHTML = '<option value="">Seleccione grupo...</option>';
+            Array.from(gruposSet).sort().forEach(g => {
+                selectGrupo.innerHTML += `<option value="${g}">${g}</option>`;
+            });
+        } else {
+            showAlert('Error', 'Error al cargar alumnos: ' + response.error, 'error');
+        }
+    }).obtenerEstudiantesDocente();
+}
+
+function filtrarEstudiantesPorGrupo(grupo) {
+    const selectEst = document.getElementById('reg-estudiante');
+    selectEst.innerHTML = '<option value="">Seleccione estudiante...</option>';
+    
+    if (!grupo) return;
+    
+    const filtrados = state.estudiantes.filter(e => e.grupo === grupo);
+    filtrados.forEach(e => {
+        selectEst.innerHTML += `<option value="${e.id}">${e.nombre}</option>`;
+    });
+}
+
+function irAPaso2() {
+    const idEst = document.getElementById('reg-estudiante').value;
+    const est = state.estudiantes.find(e => e.id.toString() === idEst.toString());
+    
+    toggleLoader(true);
+    const datos = {
+        id_estudiante: idEst,
+        tipo: document.getElementById('reg-tipo').value,
+        descripcion: document.getElementById('reg-descripcion').value
+    };
+    
+    state.currentRecord = datos;
+
+    google.script.run.withSuccessHandler(response => {
+        toggleLoader(false);
+        if (response.success) {
+            document.getElementById('notif-asunto').value = response.data.asunto;
+            document.getElementById('preview-destinatarios').innerText = response.data.destinatarios;
+            document.getElementById('preview-replyto').innerText = state.user.email;
+            
+            // Lógica mejora CCO Progenitores Independientes
+            const ccoCheckbox = document.getElementById('notif-cco');
+            if (est && est.independientes) {
+                ccoCheckbox.checked = true;
+                ccoCheckbox.disabled = true;
+                ccoCheckbox.parentElement.classList.add('opacity-60');
+                ccoCheckbox.parentElement.title = 'Obligatorio para progenitores independientes';
+            } else {
+                ccoCheckbox.checked = true; // Por defecto activado
+                ccoCheckbox.disabled = false;
+                ccoCheckbox.parentElement.classList.remove('opacity-60');
+                ccoCheckbox.parentElement.title = '';
+            }
+
+            document.getElementById('paso-1').classList.add('hidden');
+            document.getElementById('paso-2').classList.remove('hidden');
+            window.scrollTo(0, 0);
+
+            // Inicializar o actualizar Quill
+            if (!state.quill) {
+                state.quill = new Quill('#notif-editor', {
+                    theme: 'snow',
+                    modules: {
+                        toolbar: [
+                            ['bold', 'italic', 'underline'],
+                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                            [{ 'color': [] }, { 'background': [] }],
+                            ['clean']
+                        ]
+                    }
+                });
+            }
+            state.quill.root.innerHTML = response.data.cuerpo;
+        } else {
+            showAlert('Error', 'Error al generar previsualización: ' + response.error, 'error');
+        }
+    }).generarPrevisualizacionNotificacion(datos);
+}
+
+function volverAPaso1() {
+    document.getElementById('paso-2').classList.add('hidden');
+    document.getElementById('paso-1').classList.remove('hidden');
+}
+
+function enviarRegistroFinal() {
+    showConfirm('Confirmar envío', '¿Confirmas que deseas enviar esta notificación a la familia?', () => {
+        toggleLoader(true);
+        const finalData = {
+            ...state.currentRecord,
+            notificacion_asunto: document.getElementById('notif-asunto').value,
+            notificacion_cuerpo: state.quill.root.innerHTML,
+            notificacion_cco: document.getElementById('notif-cco').checked,
+            notificacion_copia: document.getElementById('notif-copia').checked
+        };
+
+        google.script.run.withSuccessHandler(response => {
+            toggleLoader(false);
+            if (response.success) {
+                document.getElementById('paso-2').classList.add('hidden');
+                document.getElementById('paso-exito').classList.remove('hidden');
+            } else {
+                showAlert('Error', 'Error al guardar: ' + response.error, 'error');
+            }
+        }).guardarRegistroYNotificar(finalData);
+    });
+}
+
+/**
+ * FAMILIAS
+ */
+function renderLoginFamilia(container) {
+    container.innerHTML = `
+        <div class="fade-in max-w-md mx-auto bg-white p-8 rounded-lg shadow-md mt-10">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Acceso familias</h2>
+            <form onsubmit="event.preventDefault(); intentarLoginFamilia();">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">Correo electrónico</label>
+                    <input type="email" id="f-email" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700">PIN de acceso</label>
+                    <input type="password" id="f-pin" required maxlength="6" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-center text-2xl tracking-widest">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors font-bold">Entrar</button>
+                <p id="login-error" class="mt-4 text-sm text-red-600 hidden text-center"></p>
+            </form>
+        </div>
+    `;
+}
+
+function intentarLoginFamilia() {
+    toggleLoader(true);
+    const email = document.getElementById('f-email').value;
+    const pin = document.getElementById('f-pin').value;
+    const errorEl = document.getElementById('login-error');
+    errorEl.classList.add('hidden');
+    
+    google.script.run
+        .withSuccessHandler(response => {
+            toggleLoader(false);
+            if (response.success) {
+                state.user = response.data;
+                document.getElementById('user-info').innerText = `${state.user.nombre} (Familia)`;
+                document.getElementById('user-info').classList.remove('hidden');
+                navegar('dashboard-familia');
+            } else {
+                errorEl.innerText = response.error;
+                errorEl.classList.remove('hidden');
+            }
+        })
+        .withFailureHandler(err => { toggleLoader(false); errorEl.innerText = 'Error: ' + err; errorEl.classList.remove('hidden'); })
+        .loginFamilia(email, pin);
+}
+
+/**
+ * ESTUDIANTES
+ */
+function renderEstudiantes(container) {
+    container.innerHTML = `
+        <div class="fade-in">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <div class="flex items-center gap-4">
+                    <button onclick="navegar('inicio')" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    </button>
+                    <h1 class="text-2xl font-bold text-gray-800">Gestión de estudiantes</h1>
+                </div>
+                ${state.user.rol !== 'Supervisor' ? `
+                <button id="btn-nuevo-estudiante" onclick="mostrarFormularioEstudiante()" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center gap-2">
+                    <span>Nuevo estudiante</span>
+                </button>` : ''}
+            </div>
+
+            <!-- Panel de filtros -->
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-6 border border-gray-100 flex flex-wrap gap-4 items-end">
+                <div class="flex-grow min-w-[200px]">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Buscar estudiante</label>
+                    <div class="relative">
+                        <input type="text" id="e-filtro-texto" oninput="filtrarYMostrarEstudiantes()" 
+                               class="w-full border border-gray-200 rounded-md p-2 pr-8 text-sm focus:border-accent outline-none" 
+                               placeholder="Nombre, NIA o email de familia...">
+                        <button onclick="limpiarFiltroEstudiantes()" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="w-full sm:w-48">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Grupo</label>
+                    <select id="e-filtro-grupo" onchange="filtrarYMostrarEstudiantes()" 
+                            class="w-full border border-gray-200 rounded-md p-2 text-sm focus:border-accent outline-none">
+                        <option value="">Todos los grupos</option>
+                    </select>
+                </div>
+                <div class="w-full sm:w-auto">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Orden</label>
+                    <button id="e-sort-btn" onclick="toggleSortEstudiantes()" 
+                            class="bg-gray-50 border border-gray-200 rounded-md p-2 text-sm flex items-center gap-2 hover:bg-gray-100 w-full justify-center">
+                        <span id="e-sort-label">Nombre (A-Z)</span>
+                        <svg id="e-sort-icon" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div id="estudiantes-lista" class="bg-white shadow-md rounded-lg overflow-hidden overflow-x-auto">
+                <div class="p-10 text-center text-gray-500 italic">Cargando estudiantes...</div>
+            </div>
+        </div>
+
+        <div id="modal-estudiante" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
+                <h3 class="text-lg font-medium text-gray-900 mb-4" id="modal-e-titulo">Nuevo estudiante</h3>
+                <form onsubmit="event.preventDefault(); guardarEstudianteFront();">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
+                        <div class="md:col-span-3">
+                            <label class="block text-sm font-medium text-gray-700">NIA / ID</label>
+                            <input type="text" id="e-id" required class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                        </div>
+                        <div class="md:col-span-5">
+                            <label class="block text-sm font-medium text-gray-700">Apellidos, Nombre (alumno)</label>
+                            <input type="text" id="e-nombre" required class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                        </div>
+                        <div class="md:col-span-4">
+                            <label class="block text-sm font-medium text-gray-700">Grupo</label>
+                            <select id="e-grupo" required class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                                <option value="">Selecciona un grupo...</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="flex items-center gap-2 text-sm font-medium text-gray-700 relative group cursor-pointer w-max">
+                            <input type="checkbox" id="e-independientes" class="w-4 h-4 text-accent border-gray-300 rounded focus:ring-accent">
+                            Progenitores independientes
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <!-- Tooltip -->
+                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-2 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 hidden group-hover:block">
+                                Si se activa, cada progenitor solo podrá ver sus propias respuestas a las anotaciones del centro, ocultando las del otro.
+                            </div>
+                        </label>
+                    </div>
+
+                    <hr class="my-4">
+                    <h4 class="font-bold text-gray-700 mb-2">Progenitor 1</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
+                        <input type="text" id="e-p1-nombre" placeholder="Apellidos, Nombre" required class="border border-gray-300 rounded-md p-2 md:col-span-5">
+                        <input type="email" id="e-p1-email" placeholder="Email" required class="border border-gray-300 rounded-md p-2 md:col-span-4">
+                        <div class="md:col-span-3">
+                            <div class="flex gap-2">
+                                <input type="text" id="e-p1-pin" placeholder="PIN (6 dígitos)" maxlength="6" required onblur="validarFormatoPin(this)" oninput="this.classList.remove('border-red-500')" class="w-full border border-gray-300 rounded-md p-2 font-mono text-center">
+                                <button type="button" onclick="generarPinAleatorio('e-p1-pin'); validarFormatoPin(document.getElementById('e-p1-pin'))" class="bg-gray-200 text-gray-700 p-2 rounded-md hover:bg-gray-300 transition-colors" title="Generar PIN aleatorio">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                </button>
+                            </div>
+                            <p id="e-p1-pin-helper" class="text-[10px] text-gray-500 mt-1">Debe contener exactamente 6 números.</p>
+                        </div>
+                    </div>
+                    
+                    <h4 class="font-bold text-gray-700 mb-2">Progenitor 2 (Opcional)</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
+                        <input type="text" id="e-p2-nombre" placeholder="Apellidos, Nombre" class="border border-gray-300 rounded-md p-2 md:col-span-5">
+                        <input type="email" id="e-p2-email" placeholder="Email" class="border border-gray-300 rounded-md p-2 md:col-span-4">
+                        <div class="md:col-span-3">
+                            <div class="flex gap-2">
+                                <input type="text" id="e-p2-pin" placeholder="PIN (6 dígitos)" maxlength="6" onblur="if(this.value) validarFormatoPin(this)" oninput="this.classList.remove('border-red-500')" class="w-full border border-gray-300 rounded-md p-2 font-mono text-center">
+                                <button type="button" onclick="generarPinAleatorio('e-p2-pin'); validarFormatoPin(document.getElementById('e-p2-pin'))" class="bg-gray-200 text-gray-700 p-2 rounded-md hover:bg-gray-300 transition-colors" title="Generar PIN aleatorio">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                </button>
+                            </div>
+                            <p id="e-p2-pin-helper" class="text-[10px] text-gray-500 mt-1">Debe contener exactamente 6 números.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end gap-3 mt-6">
+                        <button type="button" onclick="cerrarModalEstudiante()" class="bg-gray-200 px-4 py-2 rounded-md">Cancelar</button>
+                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-md">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    cargarEstudiantes();
+}
+
+function cargarEstudiantes() {
+    toggleLoader(true);
+    google.script.run
+        .withSuccessHandler(response => {
+            toggleLoader(false);
+            if (response && response.success) {
+                state.allEstudiantes = response.data;
+                
+                // Poblar filtro de grupos
+                const grupos = [...new Set(state.allEstudiantes.map(e => e.grupo))].sort();
+                const selectGr = document.getElementById('e-filtro-grupo');
+                if (selectGr) {
+                    selectGr.innerHTML = '<option value="">Todos los grupos</option>';
+                    grupos.forEach(g => {
+                        selectGr.innerHTML += `<option value="${g}">${g}</option>`;
+                    });
+                }
+
+                state.eSortAsc = true;
+                filtrarYMostrarEstudiantes();
+            } else {
+                showAlert('Error', 'No se pudieron cargar los estudiantes: ' + (response ? response.error : 'Sin respuesta del servidor'), 'error');
+            }
+        })
+        .withFailureHandler(err => {
+            toggleLoader(false);
+            showAlert('Error', 'Fallo al comunicar con el servidor: ' + err.message, 'error');
+        })
+        .listarEstudiantes();
+}
+
+function filtrarYMostrarEstudiantes() {
+    const texto = document.getElementById('e-filtro-texto').value.toLowerCase();
+    const grupo = document.getElementById('e-filtro-grupo').value;
+    
+    let filtrados = state.allEstudiantes.filter(e => {
+        const matchesTexto = e.nombre.toLowerCase().includes(texto) || 
+                             e.id.toString().toLowerCase().includes(texto) ||
+                             e.p1_email.toLowerCase().includes(texto) ||
+                             (e.p2_email && e.p2_email.toLowerCase().includes(texto));
+        const matchesGrupo = !grupo || e.grupo === grupo;
+        return matchesTexto && matchesGrupo;
+    });
+
+    // Ordenar por nombre (por defecto)
+    filtrados.sort((a, b) => {
+        const nomA = a.nombre.toLowerCase();
+        const nomB = b.nombre.toLowerCase();
+        if (nomA < nomB) return state.eSortAsc ? -1 : 1;
+        if (nomA > nomB) return state.eSortAsc ? 1 : -1;
+        return 0;
+    });
+
+    const lista = document.getElementById('estudiantes-lista');
+    if (filtrados.length === 0) {
+        lista.innerHTML = '<div class="p-12 text-center text-gray-400 italic">No se han encontrado estudiantes con los filtros aplicados.</div>';
+        return;
+    }
+
+    let html = `<table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase text-center tracking-wider">NIA</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alumno</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grupo</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progenitores</th>
+                ${state.user.rol !== 'Supervisor' ? '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>' : ''}
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">`;
+
+    filtrados.forEach(e => {
+        html += `
+            <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 text-sm font-mono text-gray-600 text-center">${e.id}</td>
+                <td class="px-6 py-4 text-sm font-bold text-gray-900">${e.nombre}</td>
+                <td class="px-6 py-4 text-sm text-gray-600">
+                    <span class="px-2 py-1 bg-gray-100 rounded text-xs font-medium">${e.grupo}</span>
+                </td>
+                <td class="px-6 py-4 text-xs text-gray-600">
+                    <div class="flex flex-col gap-1">
+                        <div class="flex items-center gap-1">
+                            <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            <span>${e.p1_nombre} <span class="text-gray-400">(${e.p1_email})</span></span>
+                        </div>
+                        ${e.p2_email ? `
+                        <div class="flex items-center gap-1">
+                            <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            <span>${e.p2_nombre} <span class="text-gray-400">(${e.p2_email})</span></span>
+                        </div>` : ''}
+                    </div>
+                </td>
+                ${state.user.rol !== 'Supervisor' ? `
+                <td class="px-6 py-4 text-sm">
+                    <button onclick='editarEstudiante(${JSON.stringify(e)})' class="text-accent hover:underline font-bold">Editar</button>
+                </td>` : ''}
+            </tr>`;
+    });
+
+    html += '</tbody></table>';
+    lista.innerHTML = html;
+}
+
+function toggleSortEstudiantes() {
+    state.eSortAsc = !state.eSortAsc;
+    const label = document.getElementById('e-sort-label');
+    const icon = document.getElementById('e-sort-icon');
+    
+    label.innerText = state.eSortAsc ? 'Nombre (A-Z)' : 'Nombre (Z-A)';
+    icon.style.transform = state.eSortAsc ? 'rotate(0deg)' : 'rotate(180deg)';
+    
+    filtrarYMostrarEstudiantes();
+}
+
+function limpiarFiltroEstudiantes() {
+    const input = document.getElementById('e-filtro-texto');
+    if (input) {
+        input.value = '';
+        filtrarYMostrarEstudiantes();
+    }
+}
+
+function generarPinAleatorio(elementId) {
+    const pin = Math.floor(100000 + Math.random() * 900000).toString();
+    document.getElementById(elementId).value = pin;
+    return pin;
+}
+
+function validarFormatoPin(inputEl) {
+    if (!inputEl || !inputEl.value) return true;
+    const isValid = /^[0-9]{6}$/.test(inputEl.value);
+    if (!isValid) {
+        inputEl.classList.add('border-red-500');
+        inputEl.classList.remove('border-gray-300');
+    } else {
+        inputEl.classList.remove('border-red-500');
+        inputEl.classList.add('border-gray-300');
+    }
+    return isValid;
+}
+
+function mostrarFormularioEstudiante() {
+    toggleLoader(true);
+    actualizarCacheGrupos(() => {
+        document.getElementById('modal-e-titulo').innerText = 'Nuevo estudiante';
+        document.getElementById('e-id').disabled = false;
+        document.getElementById('e-id').value = '';
+        document.getElementById('e-nombre').value = '';
+        document.getElementById('e-independientes').checked = false;
+        document.getElementById('e-p1-nombre').value = '';
+        document.getElementById('e-p1-email').value = '';
+        document.getElementById('e-p1-pin').value = '';
+        document.getElementById('e-p2-nombre').value = '';
+        document.getElementById('e-p2-email').value = '';
+        document.getElementById('e-p2-pin').value = '';
+        
+        // Auto-generar PINs iniciales garantizando que sean distintos
+        const pin1 = generarPinAleatorio('e-p1-pin');
+        let pin2;
+        do {
+            pin2 = generarPinAleatorio('e-p2-pin');
+        } while (pin1 === pin2);
+        
+        const select = document.getElementById('e-grupo');
+        select.innerHTML = '<option value="">Selecciona un grupo...</option>';
+        state.grupos.forEach(g => {
+            select.innerHTML += `<option value="${g.codigo}">${g.codigo} - ${g.nombre}</option>`;
+        });
+        
+        document.getElementById('modal-estudiante').classList.remove('hidden');
+        toggleLoader(false);
+    });
+}
+
+function editarEstudiante(e) {
+    toggleLoader(true);
+    actualizarCacheGrupos(() => {
+        document.getElementById('modal-e-titulo').innerText = 'Editar estudiante';
+        document.getElementById('e-id').value = e.id;
+        document.getElementById('e-id').disabled = true;
+        document.getElementById('e-nombre').value = e.nombre;
+        document.getElementById('e-independientes').checked = e.independientes || false;
+        document.getElementById('e-p1-nombre').value = e.p1_nombre;
+        document.getElementById('e-p1-email').value = e.p1_email;
+        document.getElementById('e-p1-pin').value = e.p1_pin || '';
+        document.getElementById('e-p2-nombre').value = e.p2_nombre || '';
+        document.getElementById('e-p2-email').value = e.p2_email || '';
+        document.getElementById('e-p2-pin').value = e.p2_pin || '';
+        
+        const select = document.getElementById('e-grupo');
+        select.innerHTML = '<option value="">Selecciona un grupo...</option>';
+        state.grupos.forEach(g => {
+            const selected = (g.codigo === e.grupo) ? 'selected' : '';
+            select.innerHTML += `<option value="${g.codigo}" ${selected}>${g.codigo} - ${g.nombre}</option>`;
+        });
+        
+        document.getElementById('modal-estudiante').classList.remove('hidden');
+        toggleLoader(false);
+    });
+}
+
+function guardarEstudianteFront() {
+    const p1PinEl = document.getElementById('e-p1-pin');
+    const p2PinEl = document.getElementById('e-p2-pin');
+    const p1Pin = p1PinEl.value;
+    const p2Pin = p2PinEl.value;
+    const p2Email = document.getElementById('e-p2-email').value;
+
+    if (!validarFormatoPin(p1PinEl)) {
+        showAlert('Error de formato', 'El PIN del Progenitor 1 debe contener exactamente 6 números.', 'error');
+        return;
+    }
+
+    if (p2Email && !validarFormatoPin(p2PinEl)) {
+        showAlert('Error de formato', 'El PIN del Progenitor 2 debe contener exactamente 6 números.', 'error');
+        return;
+    }
+
+    if (p2Email && p2Pin && p1Pin === p2Pin) {
+        showAlert('Error', 'Los PINs de ambos progenitores no pueden ser idénticos.', 'error');
+        return;
+    }
+
+    if (p2Email && !p2Pin) {
+        showAlert('Error', 'Si se proporciona un segundo progenitor, debe tener un PIN válido de 6 dígitos.', 'error');
+        return;
+    }
+
+    toggleLoader(true);
+    const estudiante = {
+        id: document.getElementById('e-id').value,
+        nombre: document.getElementById('e-nombre').value,
+        grupo: document.getElementById('e-grupo').value,
+        independientes: document.getElementById('e-independientes').checked,
+        p1_nombre: document.getElementById('e-p1-nombre').value,
+        p1_email: document.getElementById('e-p1-email').value,
+        p1_pin: p1Pin,
+        p2_nombre: document.getElementById('e-p2-nombre').value,
+        p2_email: p2Email,
+        p2_pin: p2Pin
+    };
+    google.script.run.withSuccessHandler(response => {
+        toggleLoader(false);
+        if (response && response.success) { cerrarModalEstudiante(); cargarEstudiantes(); }
+        else showAlert('Error', 'Error: ' + (response ? response.error : 'Sin respuesta del servidor'), 'error');
+    }).withFailureHandler(err => { toggleLoader(false); showAlert('Error', 'Error de conexión: ' + err.message, 'error'); }).guardarEstudiante(estudiante);
+}
+
+function cerrarModalEstudiante() { document.getElementById('modal-estudiante').classList.add('hidden'); }
+
+/**
+ * GRUPOS
+ */
+function renderGrupos(container) {
+    container.innerHTML = `
+        <div class="fade-in">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <div class="flex items-center gap-4">
+                    <button onclick="navegar('inicio')" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    </button>
+                    <h1 class="text-2xl font-bold text-gray-800">Gestión de grupos</h1>
+                </div>
+                <button onclick="mostrarFormularioGrupo()" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors">Nuevo grupo</button>
+            </div>
+            <div id="grupos-lista" class="bg-white shadow-md rounded-lg overflow-hidden">
+                <div class="p-10 text-center text-gray-500">Cargando grupos...</div>
+            </div>
+        </div>
+
+        <div id="modal-grupo" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <h3 class="text-lg font-medium text-gray-900 mb-4" id="modal-g-titulo">Nuevo grupo</h3>
+                <form onsubmit="event.preventDefault(); guardarGrupo();">
+                    <div class="mb-4">
+                        <label class="text-sm font-medium">Código</label>
+                        <input type="text" id="g-codigo" required class="mt-1 block w-full border border-gray-300 rounded-md p-2 uppercase">
+                    </div>
+                    <div class="mb-4">
+                        <label class="text-sm font-medium">Nombre</label>
+                        <input type="text" id="g-nombre" required class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                    </div>
+                    <div class="flex justify-end gap-3">
+                        <button type="button" onclick="cerrarModalGrupo()" class="bg-gray-200 px-4 py-2 rounded-md">Cancelar</button>
+                        <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-md">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    cargarGrupos();
+}
+
+function cargarGrupos() {
+    toggleLoader(true);
+    google.script.run
+        .withSuccessHandler(response => {
+            toggleLoader(false);
+            if (response && response.success) {
+                const grupos = response.data;
+                const lista = document.getElementById('grupos-lista');
+                if (grupos.length === 0) { lista.innerHTML = '<div class="p-10 text-center text-gray-500">No hay grupos registrados.</div>'; return; }
+                let html = `<table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Código</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th></tr></thead><tbody class="bg-white divide-y divide-gray-200">`;
+                grupos.forEach(g => {
+                    html += `<tr><td class="px-6 py-4 text-sm font-bold text-gray-900">${g.codigo}</td><td class="px-6 py-4 text-sm text-gray-600">${g.nombre}</td><td class="px-6 py-4 text-sm"><button onclick='editarGrupo(${JSON.stringify(g)})' class="text-blue-600 hover:underline">Editar</button> <button onclick="eliminarGrupo('${g.codigo}')" class="text-red-600 hover:underline ml-3">Borrar</button></td></tr>`;
+                });
+                html += '</tbody></table>';
+                lista.innerHTML = html;
+            } else {
+                showAlert('Error', 'No se pudieron cargar los grupos: ' + (response ? response.error : 'Sin respuesta del servidor'), 'error');
+            }
+        })
+        .withFailureHandler(err => {
+            toggleLoader(false);
+            showAlert('Error', 'Fallo al comunicar con el servidor: ' + err.message, 'error');
+        })
+        .listarGrupos();
+}
+
+function mostrarFormularioGrupo() {
+    document.getElementById('modal-g-titulo').innerText = 'Nuevo Grupo';
+    document.getElementById('g-codigo').disabled = false;
+    document.getElementById('g-codigo').value = '';
+    document.getElementById('g-nombre').value = '';
+    document.getElementById('modal-grupo').classList.remove('hidden');
+}
+
+function editarGrupo(g) {
+    document.getElementById('modal-g-titulo').innerText = 'Editar Grupo';
+    document.getElementById('g-codigo').value = g.codigo;
+    document.getElementById('g-codigo').disabled = true;
+    document.getElementById('g-nombre').value = g.nombre;
+    document.getElementById('modal-grupo').classList.remove('hidden');
+}
+
+function guardarGrupo() {
+    toggleLoader(true);
+    const grupo = { codigo: document.getElementById('g-codigo').value, nombre: document.getElementById('g-nombre').value };
+    google.script.run.withSuccessHandler(response => {
+        toggleLoader(false);
+        if (response.success) { cerrarModalGrupo(); cargarGrupos(); actualizarCacheGrupos(); }
+        else showAlert('Error', 'Error: ' + response.error, 'error');
+    }).withFailureHandler(err => { toggleLoader(false); showAlert('Error', 'Error: ' + err, 'error'); }).guardarGrupo(grupo);
+}
+
+function eliminarGrupo(codigo) {
+    showConfirm('Confirmar borrado', '¿Seguro que quieres borrar este grupo?', () => {
+        toggleLoader(true);
+        google.script.run.withSuccessHandler(response => {
+            toggleLoader(false);
+            if (response.success) { cargarGrupos(); actualizarCacheGrupos(); }
+            else showAlert('Error', 'Error: ' + response.error, 'error');
+        }).withFailureHandler(err => { toggleLoader(false); showAlert('Error', 'Error: ' + err, 'error'); }).eliminarGrupo(codigo);
+    });
+}
+
+function cerrarModalGrupo() { document.getElementById('modal-grupo').classList.add('hidden'); }
+
+/**
+ * USUARIOS
+ */
+function renderUsuarios(container) {
+    container.innerHTML = `
+        <div class="fade-in">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <div class="flex items-center gap-4">
+                    <button onclick="navegar('inicio')" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    </button>
+                    <h1 class="text-2xl font-bold text-gray-800">Gestión de usuarios</h1>
+                </div>
+                <button id="btn-nuevo-usuario" onclick="mostrarFormularioUsuario()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2">
+                    <span>Nuevo usuario</span>
+                </button>
+            </div>
+
+            <!-- Panel de filtros -->
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-6 border border-gray-100 flex flex-wrap gap-4 items-end">
+                <div class="flex-grow min-w-[200px]">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Buscar usuario</label>
+                    <div class="relative">
+                        <input type="text" id="u-filtro-texto" oninput="filtrarYMostrarUsuarios()" 
+                               class="w-full border border-gray-200 rounded-md p-2 pr-8 text-sm focus:border-accent outline-none" 
+                               placeholder="Nombre o email...">
+                        <button onclick="limpiarFiltroUsuarios()" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="w-full sm:w-40">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Rol</label>
+                    <select id="u-filtro-rol" onchange="filtrarYMostrarUsuarios()" 
+                            class="w-full border border-gray-200 rounded-md p-2 text-sm focus:border-accent outline-none">
+                        <option value="">Todos los roles</option>
+                        <option value="Administrador">Administrador</option>
+                        <option value="Docente">Docente</option>
+                        <option value="Supervisor">Supervisor</option>
+                    </select>
+                </div>
+                <div class="w-full sm:w-40">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Estado</label>
+                    <select id="u-filtro-estado" onchange="filtrarYMostrarUsuarios()" 
+                            class="w-full border border-gray-200 rounded-md p-2 text-sm focus:border-accent outline-none">
+                        <option value="">Todos los estados</option>
+                        <option value="Activo">Activo</option>
+                        <option value="Inactivo">Inactivo</option>
+                    </select>
+                </div>
+                <div class="w-full sm:w-auto">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Orden</label>
+                    <button id="u-sort-btn" onclick="toggleSortUsuarios()" 
+                            class="bg-gray-50 border border-gray-200 rounded-md p-2 text-sm flex items-center gap-2 hover:bg-gray-100 w-full justify-center">
+                        <span id="u-sort-label">Nombre (A-Z)</span>
+                        <svg id="u-sort-icon" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div id="usuarios-lista" class="bg-white shadow-md rounded-lg overflow-hidden">
+                <div class="p-10 text-center text-gray-500 italic">Cargando usuarios...</div>
+            </div>
+        </div>
+
+        <div id="modal-usuario" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+                <h3 class="text-lg font-medium text-gray-900 mb-4" id="modal-titulo">Nuevo usuario</h3>
+                <form onsubmit="event.preventDefault(); guardarUsuario();">
+                    <div class="mb-4">
+                        <label class="text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" id="u-email" required class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                    </div>
+                    <div class="mb-4">
+                        <label class="text-sm font-medium text-gray-700">Nombre</label>
+                        <input type="text" id="u-nombre" required class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                    </div>
+                    <div class="mb-4">
+                        <label class="text-sm font-medium text-gray-700">Rol</label>
+                        <select id="u-rol" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                            <option value="Docente">Docente</option>
+                            <option value="Supervisor">Supervisor</option>
+                            <option value="Administrador">Administrador</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="text-sm font-medium text-gray-700">Estado</label>
+                        <select id="u-estado" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="text-sm font-medium text-gray-700">Grupos Asignados</label>
+                        <div id="u-grupos-container" class="mt-1 block w-full border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto bg-gray-50">
+                            <!-- Checkboxes de grupos aquí -->
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-3 mt-6">
+                        <button type="button" onclick="cerrarModal()" class="bg-gray-200 px-4 py-2 rounded-md font-medium">Cancelar</button>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md font-medium shadow-sm">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    cargarUsuarios();
+}
+
+function cargarUsuarios() {
+    toggleLoader(true);
+    google.script.run
+        .withSuccessHandler(response => {
+            toggleLoader(false);
+            if (response && response.success) {
+                state.allUsuarios = response.data;
+                state.uSortAsc = true;
+                filtrarYMostrarUsuarios();
+            } else {
+                showAlert('Error', 'No se pudieron cargar los usuarios: ' + (response ? response.error : 'Sin respuesta del servidor'), 'error');
+            }
+        })
+        .withFailureHandler(err => {
+            toggleLoader(false);
+            showAlert('Error', 'Fallo al comunicar con el servidor: ' + err.message, 'error');
+        })
+        .listarUsuarios();
+}
+
+function filtrarYMostrarUsuarios() {
+    const texto = document.getElementById('u-filtro-texto').value.toLowerCase();
+    const rol = document.getElementById('u-filtro-rol').value;
+    const estado = document.getElementById('u-filtro-estado').value;
+    
+    let filtrados = state.allUsuarios.filter(u => {
+        const matchesTexto = u.nombre.toLowerCase().includes(texto) || u.email.toLowerCase().includes(texto);
+        const matchesRol = !rol || u.rol === rol;
+        const matchesEstado = !estado || u.estado === estado;
+        return matchesTexto && matchesRol && matchesEstado;
+    });
+
+    // Ordenar por nombre
+    filtrados.sort((a, b) => {
+        const nomA = a.nombre.toLowerCase();
+        const nomB = b.nombre.toLowerCase();
+        if (nomA < nomB) return state.uSortAsc ? -1 : 1;
+        if (nomA > nomB) return state.uSortAsc ? 1 : -1;
+        return 0;
+    });
+
+    const lista = document.getElementById('usuarios-lista');
+    if (filtrados.length === 0) {
+        lista.innerHTML = '<div class="p-12 text-center text-gray-400 italic">No se han encontrado usuarios con los filtros aplicados.</div>';
+        return;
+    }
+
+    let html = `
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase text-center tracking-wider">Rol</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase text-center tracking-wider">Grupos</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">`;
+
+    usuarios = filtrados; // Para consistencia con el bucle original si fuera necesario
+    filtrados.forEach(u => {
+        const rolColor = u.rol === 'Administrador' ? 'bg-purple-100 text-purple-800' : 
+                         u.rol === 'Supervisor' ? 'bg-indigo-100 text-indigo-800' : 
+                         'bg-blue-100 text-blue-800';
+        
+        html += `
+            <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 text-sm text-gray-600">${u.email}</td>
+                <td class="px-6 py-4 text-sm font-bold text-gray-900">${u.nombre}</td>
+                <td class="px-6 py-4 text-sm text-center">
+                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded-full ${rolColor}">${u.rol}</span>
+                </td>
+                <td class="px-6 py-4 text-sm text-center font-mono text-gray-400 text-xs">${u.grupos || '-'}</td>
+                <td class="px-6 py-4 text-sm">
+                    <button onclick='editarUsuario(${JSON.stringify(u)})' class="text-accent hover:underline font-bold">Editar</button>
+                </td>
+            </tr>`;
+    });
+
+    html += '</tbody></table>';
+    lista.innerHTML = html;
+}
+
+function toggleSortUsuarios() {
+    state.uSortAsc = !state.uSortAsc;
+    const label = document.getElementById('u-sort-label');
+    const icon = document.getElementById('u-sort-icon');
+    
+    label.innerText = state.uSortAsc ? 'Nombre (A-Z)' : 'Nombre (Z-A)';
+    icon.style.transform = state.uSortAsc ? 'rotate(0deg)' : 'rotate(180deg)';
+    
+    filtrarYMostrarUsuarios();
+}
+
+function limpiarFiltroUsuarios() {
+    const input = document.getElementById('u-filtro-texto');
+    if (input) {
+        input.value = '';
+        filtrarYMostrarUsuarios();
+    }
+}
+
+function mostrarFormularioUsuario() {
+    toggleLoader(true);
+    actualizarCacheGrupos(() => {
+        document.getElementById('modal-titulo').innerText = 'Nuevo usuario';
+        document.getElementById('u-email').disabled = false;
+        document.getElementById('u-email').value = '';
+        document.getElementById('u-nombre').value = '';
+        document.getElementById('u-rol').value = 'Docente';
+        document.getElementById('u-estado').value = 'Activo';
+        
+        const container = document.getElementById('u-grupos-container');
+        container.innerHTML = '';
+        state.grupos.forEach(g => {
+            container.innerHTML += `
+                <label class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                    <input type="checkbox" class="grupo-checkbox" value="${g.codigo}">
+                    <span class="text-sm">${g.codigo} - ${g.nombre}</span>
+                </label>`;
+        });
+        
+        document.getElementById('modal-usuario').classList.remove('hidden');
+        toggleLoader(false);
+    });
+}
+
+function editarUsuario(u) {
+    toggleLoader(true);
+    actualizarCacheGrupos(() => {
+        document.getElementById('modal-titulo').innerText = 'Editar Usuario';
+        document.getElementById('u-email').value = u.email;
+        document.getElementById('u-email').disabled = true;
+        document.getElementById('u-nombre').value = u.nombre;
+        document.getElementById('u-rol').value = u.rol;
+        document.getElementById('u-estado').value = u.estado;
+        
+        const asignados = (u.grupos || '').split(',').map(s => s.trim());
+        const container = document.getElementById('u-grupos-container');
+        container.innerHTML = '';
+        state.grupos.forEach(g => {
+            const checked = asignados.includes(g.codigo) ? 'checked' : '';
+            container.innerHTML += `
+                <label class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                    <input type="checkbox" class="grupo-checkbox" value="${g.codigo}" ${checked}>
+                    <span class="text-sm">${g.codigo} - ${g.nombre}</span>
+                </label>`;
+        });
+        
+        document.getElementById('modal-usuario').classList.remove('hidden');
+        toggleLoader(false);
+    });
+}
+
+function guardarUsuario() {
+    toggleLoader(true);
+    const checkboxes = document.querySelectorAll('.grupo-checkbox:checked');
+    const grupos = Array.from(checkboxes).map(cb => cb.value).join(', ');
+    
+    const usuario = {
+        email: document.getElementById('u-email').value,
+        nombre: document.getElementById('u-nombre').value,
+        rol: document.getElementById('u-rol').value,
+        estado: document.getElementById('u-estado').value,
+        grupos: grupos
+    };
+    google.script.run.withSuccessHandler(response => {
+        toggleLoader(false);
+        if (response.success) { cerrarModal(); cargarUsuarios(); }
+        else showAlert('Error', 'Error: ' + response.error, 'error');
+    }).withFailureHandler(err => { toggleLoader(false); showAlert('Error', 'Error: ' + err, 'error'); }).guardarUsuario(usuario);
+}
+
+function cerrarModal() { document.getElementById('modal-usuario').classList.add('hidden'); }
+
+/**
+ * INICIO Y AUXILIARES
+ */
+function renderInicio(container) {
+    let html = `<div class="fade-in"><h1 class="text-2xl font-bold text-gray-800 mb-6">Bienvenido, ${state.user.nombre}</h1><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">`;
+    
+    // 1. Registrar anotación (Admin y Docente)
+    if (state.user.rol === 'Administrador' || state.user.rol === 'Docente') {
+        html += crearTarjeta('Registrar anotación', 'Registra el seguimiento de un alumno.', 'accent', 'crear-registro');
+    }
+    
+    // 2. Gestión de estudiantes (Admin, Docente, Supervisor)
+    if (state.user.rol === 'Administrador' || state.user.rol === 'Docente' || state.user.rol === 'Supervisor') {
+        html += crearTarjeta('Gestión de estudiantes', 'Consulta y administra el alumnado y sus familias.', 'green', 'estudiantes');
+    }
+    
+    // 3. Dashboard global (Admin, Docente, Supervisor)
+    if (state.user.rol === 'Administrador' || state.user.rol === 'Docente' || state.user.rol === 'Supervisor') {
+        html += crearTarjeta('Dashboard global', 'Visualiza estadísticas y el historial completo.', 'indigo', 'dashboard');
+    }
+    
+    // 4, 5, 6. Gestión de usuarios, grupos y configuración (Solo Admin)
+    if (state.user.rol === 'Administrador') {
+        html += crearTarjeta('Gestión de usuarios', 'Administra el profesorado y permisos.', 'gray', 'usuarios');
+        html += crearTarjeta('Gestión de grupos', 'Define los grupos del centro.', 'accent', 'grupos');
+        html += crearTarjeta('Configuración', 'Ajustes del sistema y mantenimiento.', 'orange', 'ajustes');
+    }
+    
+    html += `</div></div>`;
+    container.innerHTML = html;
+}
+
+function crearTarjeta(titulo, descripcion, color, accion) {
+    const borderColor = color === 'accent' ? 'border-accent' : `border-${color}-600`;
+    return `<div class="bg-white rounded-lg shadow-md p-6 border-l-4 ${borderColor} hover:shadow-lg transition-shadow cursor-pointer" onclick="navegar('${accion}')"><h3 class="text-lg font-semibold text-gray-900">${titulo}</h3><p class="text-gray-600 mt-2 text-sm">${descripcion}</p></div>`;
+}
+
+function mostrarError(mensaje) {
+    document.getElementById('app').innerHTML = `<div class="bg-red-50 border-l-4 border-red-400 p-4 mt-10 max-w-lg mx-auto"><div class="flex"><div class="ml-3"><p class="text-sm text-red-700 font-bold">${mensaje}</p></div></div></div>`;
+}
+
+/**
+ * VISTAS PARA FAMILIAS (TOKEN Y LOGIN MANUAL)
+ */
+
+function renderLoginFamiliaToken() {
+    const container = document.getElementById('app');
+    container.innerHTML = `
+        <div class="fade-in max-w-md mx-auto mt-10">
+            <div class="bg-white rounded-lg shadow-xl overflow-hidden border-t-4 border-accent">
+                <div class="bg-gray-50 p-6 text-center border-b">
+                    <h2 class="text-2xl font-bold text-gray-800 uppercase tracking-wider">Acceso Privado</h2>
+                    <p class="text-gray-500 text-sm mt-1">Introduzca su PIN para ver los detalles</p>
+                </div>
+                <div class="p-8">
+                    <form onsubmit="verificarPinToken(event)">
+                        <div class="mb-6 text-center">
+                            <label class="block text-xs font-bold text-gray-400 mb-4 uppercase tracking-widest text-center">PIN Personal (6 dígitos)</label>
+                            <input type="password" id="fam-pin" required 
+                                   class="w-full px-4 py-4 border-2 border-gray-200 rounded-lg focus:border-accent focus:outline-none text-center text-4xl tracking-[0.4em] font-mono mx-auto" 
+                                   placeholder="••••••" maxlength="6">
+                        </div>
+                        <button type="submit" 
+                                class="w-full bg-accent text-white py-4 rounded-lg font-bold uppercase tracking-widest hover:brightness-110 transition-all shadow-md">
+                            Acceder al registro
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <p class="text-center text-[10px] text-gray-400 mt-6 uppercase tracking-tighter">
+                Acceso seguro mediante Token ${state.token ? state.token.substring(0,8) : '...'}
+            </p>
+        </div>
+    `;
+}
+
+function verificarPinToken(event) {
+    if (event) event.preventDefault();
+    const pin = document.getElementById('fam-pin').value;
+    
+    toggleLoader(true);
+    google.script.run
+        .withSuccessHandler(response => {
+            toggleLoader(false);
+            if (!response) {
+                showAlert('Error', 'El servidor devolvió una respuesta vacía. Por favor, inténtelo de nuevo.', 'error');
+                return;
+            }
+            if (response.success) {
+                state.pin = pin;
+                state.familyData = response.data;
+                
+                // Identificar al progenitor en la interfaz
+                const est = response.data.estudiante;
+                const pIdx = response.data.parentIndex;
+                state.user = {
+                    nombre: pIdx === 1 ? est.p1_nombre : est.p2_nombre,
+                    email: pIdx === 1 ? est.p1_email : est.p2_email,
+                    rol: 'Familia'
+                };
+                
+                const userInfoEl = document.getElementById('user-info');
+                if (userInfoEl) {
+                    userInfoEl.innerText = `${state.user.nombre} (Familia)`;
+                    userInfoEl.classList.remove('hidden');
+                }
+
+                renderDashboardFamilia(document.getElementById('app'), response.data);
+            } else {
+                showAlert('Acceso denegado', response.error, 'error');
+            }
+        })
+        .withFailureHandler(err => {
+            toggleLoader(false);
+            showAlert('Error de conexión', 'No se pudo contactar con el servidor: ' + err.message, 'error');
+        })
+        .validarTokenYPin(state.token, pin);
+}
+
+function renderDashboardFamilia(container, data) {
+    try {
+        console.log('Renderizando dashboard familia...', data);
+        const reg = data.registro;
+        const est = data.estudiante;
+        const pIndex = data.parentIndex;
+        
+        // Procesamiento seguro de fecha
+        let fechaStr = 'Fecha no disponible';
+        try {
+            const f = new Date(reg.fecha);
+            if (!isNaN(f.getTime())) {
+                fechaStr = f.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            }
+        } catch (e) { console.error('Error al procesar fecha:', e); }
+        
+        let badgeColor = 'bg-blue-100 text-blue-800';
+        if (reg.tipo === 'Incidencia') badgeColor = 'bg-red-100 text-red-800';
+        if (reg.tipo === 'Felicitación') badgeColor = 'bg-green-100 text-green-800';
+
+        container.innerHTML = `
+            <div class="fade-in max-w-4xl mx-auto">
+                <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6 border-t-4 border-accent">
+                    <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-800">${est.nombre}</h1>
+                            <p class="text-sm text-gray-500 italic">Grupo: ${est.grupo}</p>
+                        </div>
+                        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase ${badgeColor}">${reg.tipo}</span>
+                        <div class="flex items-center gap-4">
+                            <button onclick="navegar('dashboard-familia-general')" class="text-accent hover:text-blue-800 transition-colors flex items-center gap-1 group">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z"></path></svg>
+                                <span class="text-xs font-bold uppercase tracking-tight decoration-dotted group-hover:underline">Panel general</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="p-8">
+                        <div class="flex items-center gap-2 text-sm text-gray-400 mb-4">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <span>Fecha de registro: ${fechaStr}</span>
+                        </div>
+                        
+                        <div class="prose max-w-none text-gray-700 bg-blue-50 p-6 rounded-lg border-l-4 border-accent italic mb-2">
+                            ${reg.descripcion.replace(/\n/g, '<br>')}
+                        </div>
+                        ${est.independientes && est.p1_email && est.p2_email ? 
+                            '<p class="text-[10px] text-gray-400 mb-8 italic text-right">* Este registro se gestiona de manera independiente; el otro progenitor no verá su respuesta.</p>' : 
+                            '<div class="mb-8"></div>'}
+
+                        <div class="space-y-6">
+                            <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2 border-b pb-2 uppercase tracking-tight">
+                                <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                                Respuestas de la familia
+                            </h3>
+                            
+                            <div id="comentarios-container" class="space-y-4">
+                                <!-- Se cargan dinámicamente -->
+                            </div>
+
+                            <div class="mt-8 pt-6 border-t border-gray-100">
+                                <label class="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest">Su respuesta para el docente</label>
+                                <textarea id="fam-nuevo-comentario" rows="4" 
+                                          class="w-full border-2 border-gray-100 rounded-lg p-4 focus:border-accent focus:outline-none transition-all text-sm"
+                                          placeholder="Escriba aquí su respuesta...">${pIndex === 1 ? (reg.comentario_p1 || '') : (reg.comentario_p2 || '')}</textarea>
+                                <div class="flex justify-end mt-4">
+                                    <button id="btn-enviar-comentario-fam" onclick="enviarComentarioFamilia()" 
+                                            class="bg-accent text-white px-8 py-3 rounded-lg font-bold shadow-md hover:brightness-110 transition-all uppercase tracking-widest text-xs flex items-center gap-2">
+                                        <span>Enviar respuesta</span>
+                                    </button>
+                                </div>
+                            </div>                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const cContainer = document.getElementById('comentarios-container');
+        let hasComments = false;
+
+        // Mostrar Comentario P1 (si existe y si no son independientes o si somos P1)
+        if (reg.comentario_p1) {
+            hasComments = true;
+            const f1 = new Date(reg.fecha_p1).toLocaleString();
+            cContainer.innerHTML += `
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold text-accent uppercase tracking-tighter">${est.p1_nombre}</span>
+                        <span class="text-[10px] text-gray-400">${f1}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 italic">"${reg.comentario_p1}"</p>
+                </div>
+            `;
+        }
+
+        // Mostrar Comentario P2 (si existe y si no son independientes o si somos P2)
+        if (reg.comentario_p2) {
+            hasComments = true;
+            const f2 = new Date(reg.fecha_p2).toLocaleString();
+            cContainer.innerHTML += `
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold text-accent uppercase tracking-tighter">${est.p2_nombre}</span>
+                        <span class="text-[10px] text-gray-400">${f2}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 italic">"${reg.comentario_p2}"</p>
+                </div>
+            `;
+        }
+
+        if (!hasComments) {
+            cContainer.innerHTML = '<p class="text-sm text-gray-400 italic text-center py-4">No hay respuestas registradas todavía.</p>';
+        }
+
+    } catch (e) {
+        console.error('Error en renderDashboardFamilia:', e);
+        mostrarError('Error al mostrar el panel: ' + e.message);
+    }
+}
+
+function enviarComentarioFamilia() {
+    const comentario = document.getElementById('fam-nuevo-comentario').value;
+    if (!comentario.trim()) {
+        showAlert('Atención', 'El comentario no puede estar vacío.', 'warning');
+        return;
+    }
+
+    setButtonState('btn-enviar-comentario-fam', true);
+    google.script.run
+        .withSuccessHandler(response => {
+            setButtonState('btn-enviar-comentario-fam', false, 'Enviar respuesta');
+            if (response.success) {
+                showAlert('Éxito', 'Su respuesta ha sido registrada correctamente.', 'success');
+                verificarPinToken();
+            } else {
+                showAlert('Error', 'No se pudo guardar el comentario: ' + response.error, 'error');
+            }
+        })
+        .withFailureHandler(err => {
+            setButtonState('btn-enviar-comentario-fam', false, 'Enviar respuesta');
+            showAlert('Error', 'Fallo de conexión: ' + err.message, 'error');
+        })
+        .guardarComentarioFamilia(state.token, state.pin, comentario);
+}
+
+function renderLoginFamiliaManual() {
+    const container = document.getElementById('app');
+    container.innerHTML = `
+        <div class="fade-in max-w-md mx-auto mt-10">
+            <div class="bg-white rounded-lg shadow-xl overflow-hidden border-t-4 border-accent">
+                <div class="bg-gray-50 p-6 text-center border-b">
+                    <h2 class="text-2xl font-bold text-gray-800 uppercase tracking-wider">Portal de Familias</h2>
+                    <p class="text-gray-500 text-sm mt-1">Acceda al historial de seguimiento de sus hijos</p>
+                </div>
+                <div class="p-8">
+                    <form onsubmit="ejecutarLoginFamiliaManual(event)">
+                        <div class="mb-5">
+                            <label class="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest">Email de contacto</label>
+                            <input type="email" id="login-email" required 
+                                   class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-accent focus:outline-none" 
+                                   placeholder="ejemplo@email.com">
+                        </div>
+                        <div class="mb-8">
+                            <label class="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest text-center">PIN Personal (6 dígitos)</label>
+                            <input type="password" id="login-pin" required 
+                                   class="w-full px-4 py-4 border-2 border-gray-200 rounded-lg focus:border-accent focus:outline-none text-center text-4xl tracking-[0.4em] font-mono" 
+                                   placeholder="••••••" maxlength="6">
+                        </div>
+                        <button type="submit" 
+                                class="w-full bg-accent text-white py-4 rounded-lg font-bold uppercase tracking-widest hover:brightness-110 transition-all shadow-md">
+                            Iniciar Sesión
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function ejecutarLoginFamiliaManual(event) {
+    if (event) event.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const pin = document.getElementById('login-pin').value;
+    
+    toggleLoader(true);
+    google.script.run
+        .withSuccessHandler(response => {
+            toggleLoader(false);
+            if (response.success) {
+                state.user = response.data;
+                state.pin = pin;
+                document.getElementById('user-info').innerText = `${state.user.nombre} (Familia)`;
+                document.getElementById('user-info').classList.remove('hidden');
+                navegar('dashboard-familia-general');
+            } else {
+                showAlert('Error de acceso', response.error, 'error');
+            }
+        })
+        .withFailureHandler(err => {
+            toggleLoader(false);
+            showAlert('Error', err.message, 'error');
+        })
+        .loginFamilia(email, pin);
+}
+
+function renderDashboardFamiliaGeneral(container) {
+    container.innerHTML = `
+        <div class="fade-in">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <h1 class="text-2xl font-bold text-gray-800">Historial de seguimiento</h1>
+                <div class="flex items-center gap-2">
+                    <button id="btn-toggle-stats" onclick="toggleDashboard()" class="text-xs text-white bg-accent hover:brightness-110 font-bold uppercase tracking-wider px-4 py-1.5 rounded-lg shadow-sm flex items-center gap-2 transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        <span id="label-toggle-stats">Ver Estadísticas</span>
+                    </button>
+                    <button onclick="navegar('login-familia')" class="text-xs text-gray-500 hover:text-accent font-medium uppercase tracking-wider bg-white px-3 py-1.5 rounded-lg border border-gray-200">Cerrar sesión</button>
+                </div>
+            </div>
+
+            <!-- Panel de Filtros -->
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-4 border border-gray-100 flex flex-wrap gap-4 items-end">
+                <div class="flex-grow min-w-[200px]">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Buscar en anotación</label>
+                    <div class="relative">
+                        <input type="text" id="filtro-texto" oninput="filtrarYMostrarRegistrosFamilia()" 
+                               class="w-full border border-gray-200 rounded-md p-2 pr-8 text-sm focus:border-accent outline-none" 
+                               placeholder="Contenido, palabras clave...">
+                        <button onclick="limpiarFiltroTexto()" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="w-full sm:w-48">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Alumno</label>
+                    <select id="filtro-alumno" onchange="filtrarYMostrarRegistrosFamilia()" 
+                            class="w-full border border-gray-200 rounded-md p-2 text-sm focus:border-accent outline-none">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="w-full sm:w-40">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Tipo</label>
+                    <select id="filtro-tipo" onchange="filtrarYMostrarRegistrosFamilia()" 
+                            class="w-full border border-gray-200 rounded-md p-2 text-sm focus:border-accent outline-none">
+                        <option value="">Todos</option>
+                        <option value="General">General</option>
+                        <option value="Incidencia">Incidencia</option>
+                        <option value="Felicitación">Felicitación</option>
+                        <option value="Reunión">Reunión</option>
+                    </select>
+                </div>
+                <div class="w-full sm:w-40">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Fecha</label>
+                    <button id="sort-order" onclick="toggleSortOrder()" 
+                            class="bg-gray-50 border border-gray-200 rounded-md p-2 text-sm flex items-center gap-2 hover:bg-gray-100 w-full justify-center">
+                        <span id="sort-label" class="whitespace-nowrap">Más recientes</span>
+                        <svg id="sort-icon" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard Gráfico (Escamoteable) -->
+            <div id="dashboard-container" class="hidden fade-in bg-white rounded-lg shadow-sm p-6 mb-6 border border-gray-100">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                        <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                        Evolución últimos 12 meses
+                    </h3>
+                    <div class="flex bg-gray-100 p-1 rounded-lg">
+                        <button id="btn-chart-bar" onclick="cambiarTipoGrafico('bar')" 
+                                class="px-3 py-1 text-xs font-bold rounded-md transition-all bg-white text-accent shadow-sm">Columnas</button>
+                        <button id="btn-chart-line" onclick="cambiarTipoGrafico('line')" 
+                                class="px-3 py-1 text-xs font-bold rounded-md transition-all text-gray-500 hover:text-gray-700">Líneas</button>
+                    </div>
+                </div>
+                <div id="chart-element" class="w-full min-h-[300px]"></div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div id="registros-familia-lista" class="divide-y divide-gray-100">
+                    <div class="p-10 text-center text-gray-400 italic">Cargando historial...</div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    state.sortAsc = false; // Por defecto descendente (más recientes primero)
+    cargarRegistrosFamilia();
+}
+
+function toggleSortOrder() {
+    state.sortAsc = !state.sortAsc;
+    const label = document.getElementById('sort-label');
+    const icon = document.getElementById('sort-icon');
+    
+    label.innerText = state.sortAsc ? 'Más antiguos' : 'Más recientes';
+    icon.style.transform = state.sortAsc ? 'rotate(180deg)' : 'rotate(0deg)';
+    
+    filtrarYMostrarRegistrosFamilia();
+}
+
+function cargarRegistrosFamilia() {
+    toggleLoader(true);
+    google.script.run
+        .withSuccessHandler(response => {
+            toggleLoader(false);
+            if (response && response.success) {
+                state.recordsFamilia = response.data;
+                
+                // Poblar filtro de alumnos
+                const alumnos = [...new Set(state.recordsFamilia.map(r => r.estudiante_nombre))].sort();
+                const selectAl = document.getElementById('filtro-alumno');
+                if (selectAl) {
+                    selectAl.innerHTML = '<option value="">Todos</option>';
+                    alumnos.forEach(a => {
+                        selectAl.innerHTML += `<option value="${a}">${a}</option>`;
+                    });
+                }
+
+                filtrarYMostrarRegistrosFamilia();
+            } else {
+                showAlert('Error', 'No se pudieron cargar los registros: ' + (response ? response.error : 'Sin respuesta del servidor'), 'error');
+            }
+        })
+        .withFailureHandler(err => {
+            toggleLoader(false);
+            showAlert('Error', 'Fallo al comunicar con el servidor: ' + err.message, 'error');
+        })
+        .listarRegistrosFamilia(state.user.email, state.pin);
+}
+
+function filtrarYMostrarRegistrosFamilia() {
+    const textoInput = document.getElementById('filtro-texto');
+    const texto = textoInput ? textoInput.value.toLowerCase() : '';
+    const alumno = document.getElementById('filtro-alumno').value;
+    const tipo = document.getElementById('filtro-tipo').value;
+    
+    let filtrados = state.recordsFamilia.filter(r => {
+        const matchesTexto = r.descripcion.toLowerCase().includes(texto) || r.tipo.toLowerCase().includes(texto);
+        const matchesAlumno = !alumno || r.estudiante_nombre === alumno;
+        const matchesTipo = !tipo || r.tipo === tipo;
+        return matchesTexto && matchesAlumno && matchesTipo;
+    });
+
+    // Ordenar
+    filtrados.sort((a, b) => {
+        const dA = new Date(a.fecha).getTime();
+        const dB = new Date(b.fecha).getTime();
+        return state.sortAsc ? dA - dB : dB - dA;
+    });
+
+    const container = document.getElementById('registros-familia-lista');
+    
+    // Actualizar gráfico si el dashboard está visible
+    const dashContainer = document.getElementById('dashboard-container');
+    if (dashContainer && !dashContainer.classList.contains('hidden')) {
+        renderizarOActualizarGrafico(filtrados);
+    }
+
+    if (filtrados.length === 0) {
+        container.innerHTML = '<div class="p-12 text-center text-gray-400 italic">No se han encontrado registros con los filtros aplicados.</div>';
+        return;
+    }
+
+    container.innerHTML = '';
+    filtrados.forEach(reg => {
+        const fecha = new Date(reg.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        let badgeColor = 'bg-blue-100 text-blue-700';
+        if (reg.tipo === 'Incidencia') badgeColor = 'bg-red-100 text-red-700';
+        if (reg.tipo === 'Felicitación') badgeColor = 'bg-green-100 text-green-700';
+        if (reg.tipo === 'Reunión') badgeColor = 'bg-amber-100 text-amber-700';
+
+        container.innerHTML += `
+            <div class="p-4 hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-4 group" 
+                 onclick="verDetalleRegistroFamilia('${reg.token}')">
+                <div class="flex-shrink-0 w-12 text-center border-r border-gray-100 pr-2">
+                    <span class="text-[10px] text-gray-400 font-mono uppercase block">${fecha.split('/')[2]}</span>
+                    <span class="text-sm font-bold text-gray-700 block -mt-1">${fecha.split('/')[0]}/${fecha.split('/')[1]}</span>
+                </div>
+                <div class="flex-grow">
+                    <div class="flex items-center gap-2 mb-0.5">
+                        <span class="text-xs font-bold text-accent uppercase tracking-tighter">${reg.estudiante_nombre}</span>
+                        <span class="text-[10px] text-gray-400 italic">(${reg.grupo})</span>
+                    </div>
+                    <h3 class="text-sm font-semibold text-gray-800 leading-tight group-hover:text-accent transition-colors">${reg.tipo}</h3>
+                </div>
+                <div class="flex-shrink-0 flex items-center gap-3">
+                    <div class="flex gap-1">
+                        ${reg.tiene_comentario ? 
+                            '<span title="Respondido" class="w-2 h-2 rounded-full bg-green-500"></span>' : 
+                            '<span title="Pendiente de respuesta" class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>'}
+                    </div>
+                    <svg class="w-5 h-5 text-gray-300 group-hover:text-gray-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </div>
+            </div>
+        `;
+    });
+}
+
+function limpiarFiltroTexto() {
+    const input = document.getElementById('filtro-texto');
+    if (input) {
+        input.value = '';
+        filtrarYMostrarRegistrosFamilia();
+    }
+}
+
+function verDetalleRegistroFamilia(token) {
+    state.token = token;
+    toggleLoader(true);
+    google.script.run.withSuccessHandler(response => {
+        toggleLoader(false);
+        if (response.success) {
+            mostrarModalDetalle(response.data);
+        } else {
+            showAlert('Error', response.error, 'error');
+        }
+    }).validarTokenYPin(token, state.pin);
+}
+
+function mostrarModalDetalle(data) {
+    const reg = data.registro;
+    const est = data.estudiante;
+    const pIndex = data.parentIndex;
+    const esStaff = data.esStaff || false;
+    const fecha = new Date(reg.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    let badgeColor = 'bg-blue-100 text-blue-800';
+    if (reg.tipo === 'Incidencia') badgeColor = 'bg-red-100 text-red-800';
+    if (reg.tipo === 'Felicitación') badgeColor = 'bg-green-100 text-green-800';
+    if (reg.tipo === 'Reunión') badgeColor = 'bg-amber-100 text-amber-800';
+
+    const modal = document.getElementById('modal-detalle');
+    const contenido = document.getElementById('detalle-contenido');
+
+    contenido.innerHTML = `
+        <div class="bg-gray-50 p-6 border-b flex justify-between items-start">
+            <div>
+                <span class="text-[10px] font-bold text-accent uppercase tracking-widest block mb-1">Detalle del Registro</span>
+                <h2 class="text-xl font-bold text-gray-800">${est.nombre} <span class="font-normal text-gray-400 text-sm">(${est.grupo})</span></h2>
+                <p class="text-xs text-gray-500 mt-1">${fecha}</p>
+            </div>
+            <button onclick="cerrarModalDetalle()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <div class="p-8">
+            <div class="flex items-center gap-2 mb-6">
+                <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${badgeColor}">${reg.tipo}</span>
+            </div>
+
+            <div class="bg-blue-50 border-l-4 border-accent p-6 rounded-r-lg italic text-gray-700 mb-2 leading-relaxed">
+                ${reg.descripcion.replace(/\n/g, '<br>')}
+            </div>
+            ${est.independientes && est.p1_email && est.p2_email ? 
+                '<p class="text-[10px] text-gray-400 mb-8 italic text-right">* Este registro se gestiona de manera independiente; el otro progenitor no verá su respuesta.</p>' : 
+                '<div class="mb-8"></div>'}
+
+            <div class="space-y-6">
+                <h3 class="text-sm font-bold text-gray-800 flex items-center gap-2 border-b pb-2 uppercase tracking-tight">
+                    Respuestas de la familia
+                </h3>
+                
+                <div id="modal-comentarios" class="space-y-4">
+                    <!-- Dinámico -->
+                </div>
+
+                ${!esStaff ? `
+                <div class="mt-8 pt-6 border-t border-gray-100">
+                    <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Añadir o actualizar su respuesta</label>
+                    <textarea id="modal-nuevo-comentario" rows="3" 
+                              class="w-full border-2 border-gray-100 rounded-lg p-3 focus:border-accent focus:outline-none transition-all text-sm"
+                              placeholder="Escriba aquí su respuesta...">${pIndex === 1 ? (reg.comentario_p1 || '') : (reg.comentario_p2 || '')}</textarea>
+                    <div class="flex justify-end mt-4">
+                        <button id="btn-enviar-comentario-modal" onclick="enviarComentarioModal()" 
+                                class="bg-accent text-white px-6 py-2 rounded-lg font-bold shadow-md hover:brightness-110 transition-all uppercase tracking-widest text-[10px] flex items-center gap-2">
+                            <span>Guardar respuesta</span>
+                        </button>
+                    </div>
+                </div>` : ''}
+            </div>
+        </div>
+    `;
+
+    const cContainer = document.getElementById('modal-comentarios');
+    let hasComments = false;
+
+    if (reg.comentario_p1) {
+        hasComments = true;
+        cContainer.innerHTML += `
+            <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-[10px] font-bold text-accent uppercase tracking-tighter">${est.p1_nombre}</span>
+                    <span class="text-[9px] text-gray-400">${new Date(reg.fecha_p1).toLocaleString()}</span>
+                </div>
+                <p class="text-xs text-gray-600 italic">"${reg.comentario_p1}"</p>
+            </div>
+        `;
+    }
+
+    if (reg.comentario_p2) {
+        hasComments = true;
+        cContainer.innerHTML += `
+            <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-[10px] font-bold text-accent uppercase tracking-tighter">${est.p2_nombre}</span>
+                    <span class="text-[9px] text-gray-400">${new Date(reg.fecha_p2).toLocaleString()}</span>
+                </div>
+                <p class="text-xs text-gray-600 italic">"${reg.comentario_p2}"</p>
+            </div>
+        `;
+    }
+
+    if (!hasComments) {
+        cContainer.innerHTML = '<p class="text-xs text-gray-400 italic text-center py-2">No hay respuestas registradas.</p>';
+    }
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function cerrarModalDetalle() {
+    document.getElementById('modal-detalle').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+function enviarComentarioModal() {
+    const comentario = document.getElementById('modal-nuevo-comentario').value;
+    if (!comentario.trim()) {
+        showAlert('Atención', 'El comentario no puede estar vacío.', 'warning');
+        return;
+    }
+
+    setButtonState('btn-enviar-comentario-modal', true);
+    google.script.run
+        .withSuccessHandler(response => {
+            setButtonState('btn-enviar-comentario-modal', false, 'Guardar respuesta');
+            if (response.success) {
+                showAlert('Éxito', 'Respuesta guardada.', 'success');
+                cerrarModalDetalle();
+                cargarRegistrosFamilia(); // Recargar lista principal
+            } else {
+                showAlert('Error', response.error, 'error');
+            }
+        })
+        .withFailureHandler(err => {
+            setButtonState('btn-enviar-comentario-modal', false, 'Guardar respuesta');
+            showAlert('Error', 'Fallo de conexión: ' + err.message, 'error');
+        })
+        .guardarComentarioFamilia(state.token, state.pin, comentario);
+}
+
+/**
+ * DASHBOARD GRÁFICO (FAMILIAS)
+ */
+
+function toggleDashboard() {
+    const container = document.getElementById('dashboard-container');
+    const label = document.getElementById('label-toggle-stats');
+    if (container) {
+        const isHidden = container.classList.toggle('hidden');
+        if (label) label.innerText = isHidden ? 'Ver Estadísticas' : 'Ocultar Estadísticas';
+        if (!isHidden) {
+            // Si lo estamos mostrando, renderizar con los datos actuales filtrados
+            filtrarYMostrarRegistrosFamilia();
+            window.scrollTo({ top: container.offsetTop - 20, behavior: 'smooth' });
+        }
+    }
+}
+
+function cambiarTipoGrafico(tipo) {
+    state.dashboardChartType = tipo;
+    
+    // Actualizar estilos de los botones
+    const btnBar = document.getElementById('btn-chart-bar');
+    const btnLine = document.getElementById('btn-chart-line');
+    
+    if (tipo === 'bar') {
+        btnBar.className = 'px-3 py-1 text-xs font-bold rounded-md transition-all bg-white text-accent shadow-sm';
+        btnLine.className = 'px-3 py-1 text-xs font-bold rounded-md transition-all text-gray-500 hover:text-gray-700';
+    } else {
+        btnLine.className = 'px-3 py-1 text-xs font-bold rounded-md transition-all bg-white text-accent shadow-sm';
+        btnBar.className = 'px-3 py-1 text-xs font-bold rounded-md transition-all text-gray-500 hover:text-gray-700';
+    }
+    
+    filtrarYMostrarRegistrosFamilia();
+}
+
+function renderizarOActualizarGrafico(registros) {
+    const { labels, series } = procesarDatosGrafico(registros);
+    const chartEl = document.querySelector("#chart-element");
+    if (!chartEl) return;
+
+    const options = {
+        series: series,
+        colors: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b'],
+        plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
+        stroke: { curve: 'smooth', width: state.dashboardChartType === 'line' ? 3 : 0 },
+        markers: { size: state.dashboardChartType === 'line' ? 4 : 0, strokeWidth: 2, hover: { size: 6 } },
+        xaxis: {
+            categories: labels,
+            labels: { style: { colors: '#94a3b8', fontSize: '10px', fontWeight: 600 } },
+            axisBorder: { show: false },
+            axisTicks: { show: false },
+            crosshairs: { show: false, width: 0, opacity: 0, stroke: { width: 0, color: 'transparent' }, fill: { type: 'solid', color: 'transparent' } },
+            tooltip: { enabled: false }
+        },
+        yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
+        grid: { borderColor: '#f1f5f9', strokeDashArray: 4, padding: { left: 10, right: 10 } },
+        legend: { position: 'top', horizontalAlign: 'right', fontSize: '11px', fontWeight: 700, markers: { radius: 12 } },
+        tooltip: { shared: true, intersect: false, theme: 'light', y: { formatter: function(val) { return val + (val === 1 ? " anotación" : " anotaciones") } } },
+        states: {
+            normal: { filter: { type: 'none', value: 0 } },
+            hover: { filter: { type: 'none', value: 0 } },
+            active: { allowMultipleDataPointsSelection: false, filter: { type: 'none', value: 0 } }
+        },
+        chart: {
+            type: state.dashboardChartType,
+            height: 320,
+            stacked: state.dashboardChartType === 'bar',
+            toolbar: { show: false },
+            zoom: { enabled: false },
+            selection: { enabled: false },
+            fontFamily: 'inherit',
+            animations: { enabled: true },
+            events: {
+                mounted: function(chart) {
+                    if (chart && chart.el) {
+                        chart.el.querySelectorAll('title, desc').forEach(el => el.remove());
+                    }
+                },
+                updated: function(chart) {
+                    if (chart && chart.el) {
+                        chart.el.querySelectorAll('title, desc').forEach(el => el.remove());
+                    }
+                }
+            }
+        }
+    };
+
+    if (!state.dashboardChart) {
+        state.dashboardChart = new ApexCharts(chartEl, options);
+        state.dashboardChart.render();
+    } else {
+        state.dashboardChart.updateOptions({
+            chart: { type: state.dashboardChartType, stacked: state.dashboardChartType === 'bar' },
+            stroke: { width: state.dashboardChartType === 'line' ? 3 : 0 },
+            markers: { size: state.dashboardChartType === 'line' ? 4 : 0 }
+        }, false, true); // redrawPaths = true
+        state.dashboardChart.updateSeries(series);
+    }
+}
+
+function procesarDatosGrafico(registros) {
+    const tipos = ['General', 'Incidencia', 'Felicitación', 'Reunión'];
+    const hoy = new Date();
+    const meses = [];
+    const labels = [];
+    
+    // Generar últimos 12 meses
+    for (let i = 11; i >= 0; i--) {
+        const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+        const mesKey = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+        const mesLabel = d.toLocaleString('es-ES', { month: 'short', year: '2-digit' });
+        meses.push(mesKey);
+        labels.push(mesLabel);
+    }
+
+    const dataMap = {};
+    tipos.forEach(t => {
+        dataMap[t] = meses.map(() => 0);
+    });
+
+    registros.forEach(r => {
+        const d = new Date(r.fecha);
+        const mesKey = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+        const mesIdx = meses.indexOf(mesKey);
+        
+        if (mesIdx !== -1 && tipos.includes(r.tipo)) {
+            dataMap[r.tipo][mesIdx]++;
+        }
+    });
+
+    const series = tipos.map(t => ({
+        name: t,
+        data: dataMap[t]
+    }));
+
+    return { labels, series };
+}
+
+/**
+ * DASHBOARD GLOBAL (ADMIN / DOCENTE / SUPERVISOR)
+ */
+
+function renderDashboardGlobal(container) {
+    container.innerHTML = `
+        <div class="fade-in">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <div class="flex items-center gap-4">
+                    <button onclick="navegar('inicio')" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    </button>
+                    <h1 class="text-2xl font-bold text-gray-800">Dashboard global</h1>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="g-btn-toggle-stats" onclick="toggleDashboardGlobal()" class="text-xs text-white bg-accent hover:brightness-110 font-bold uppercase tracking-wider px-4 py-1.5 rounded-lg shadow-sm flex items-center gap-2 transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        <span id="g-label-toggle-stats">Ver Estadísticas</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panel de Filtros -->
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-4 border border-gray-100 flex flex-wrap gap-4 items-end">
+                <div class="flex-grow min-w-[200px]">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Buscar en anotación o alumno</label>
+                    <div class="relative">
+                        <input type="text" id="g-filtro-texto" oninput="filtrarYMostrarRegistrosGlobal()" 
+                               class="w-full border border-gray-200 rounded-md p-2 pr-8 text-sm focus:border-accent outline-none" 
+                               placeholder="Nombre, descripción, palabras clave...">
+                        <button onclick="limpiarFiltroTextoGlobal()" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="w-full sm:w-40">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Grupo</label>
+                    <select id="g-filtro-grupo" onchange="filtrarYMostrarRegistrosGlobal()" 
+                            class="w-full border border-gray-200 rounded-md p-2 text-sm focus:border-accent outline-none">
+                        <option value="">Todos los grupos</option>
+                    </select>
+                </div>
+                <div class="w-full sm:w-40">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Tipo</label>
+                    <select id="g-filtro-tipo" onchange="filtrarYMostrarRegistrosGlobal()" 
+                            class="w-full border border-gray-200 rounded-md p-2 text-sm focus:border-accent outline-none">
+                        <option value="">Todos los tipos</option>
+                        <option value="General">General</option>
+                        <option value="Incidencia">Incidencia</option>
+                        <option value="Felicitación">Felicitación</option>
+                        <option value="Reunión">Reunión</option>
+                    </select>
+                </div>
+                <div class="w-full sm:w-40">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Orden</label>
+                    <button id="g-sort-order" onclick="toggleSortOrderGlobal()" 
+                            class="bg-gray-50 border border-gray-200 rounded-md p-2 text-sm flex items-center gap-2 hover:bg-gray-100 w-full justify-center">
+                        <span id="g-sort-label" class="whitespace-nowrap">Más recientes</span>
+                        <svg id="g-sort-icon" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard Gráfico (Escamoteable) -->
+            <div id="g-dashboard-container" class="hidden fade-in bg-white rounded-lg shadow-sm p-6 mb-6 border border-gray-100">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                        <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                        Evolución Temporal de Registros
+                    </h3>
+                    <div class="flex bg-gray-100 p-1 rounded-lg">
+                        <button id="g-btn-chart-bar" onclick="cambiarTipoGraficoGlobal('bar')" 
+                                class="px-3 py-1 text-xs font-bold rounded-md transition-all bg-white text-accent shadow-sm">Columnas</button>
+                        <button id="g-btn-chart-line" onclick="cambiarTipoGraficoGlobal('line')" 
+                                class="px-3 py-1 text-xs font-bold rounded-md transition-all text-gray-500 hover:text-gray-700">Líneas</button>
+                    </div>
+                </div>
+                <div id="g-chart-element" class="w-full min-h-[300px]"></div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md overflow-hidden overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-100">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Fecha</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Alumno / Grupo</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Tipo</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Estado Familias</th>
+                        </tr>
+                    </thead>
+                    <tbody id="registros-global-lista" class="bg-white divide-y divide-gray-100">
+                        <tr>
+                            <td colspan="4" class="p-10 text-center text-gray-400 italic">Cargando registros...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    
+    state.sortAsc = false;
+    cargarRegistrosGlobal();
+}
+
+function cargarRegistrosGlobal() {
+    toggleLoader(true);
+    google.script.run
+        .withSuccessHandler(response => {
+            toggleLoader(false);
+            if (response && response.success) {
+                state.allRecords = response.data;
+                
+                // Poblar filtro de grupos
+                const grupos = [...new Set(state.allRecords.map(r => r.grupo))].sort();
+                const selectGr = document.getElementById('g-filtro-grupo');
+                if (selectGr) {
+                    // Limpiar excepto el primero
+                    selectGr.innerHTML = '<option value="">Todos los grupos</option>';
+                    grupos.forEach(g => {
+                        if (g) selectGr.innerHTML += `<option value="${g}">${g}</option>`;
+                    });
+                }
+
+                filtrarYMostrarRegistrosGlobal();
+            } else {
+                showAlert('Error', 'No se pudieron cargar los registros: ' + (response ? response.error : 'Sin respuesta del servidor'), 'error');
+            }
+        })
+        .withFailureHandler(err => {
+            toggleLoader(false);
+            showAlert('Error', 'Fallo al comunicar con el servidor: ' + err.message, 'error');
+        })
+        .listarRegistros();
+}
+
+function filtrarYMostrarRegistrosGlobal() {
+    const texto = document.getElementById('g-filtro-texto').value.toLowerCase();
+    const grupo = document.getElementById('g-filtro-grupo').value;
+    const tipo = document.getElementById('g-filtro-tipo').value;
+    
+    let filtrados = state.allRecords.filter(r => {
+        const matchesTexto = r.descripcion.toLowerCase().includes(texto) || 
+                             r.estudiante_nombre.toLowerCase().includes(texto) ||
+                             r.id_estudiante.toString().toLowerCase().includes(texto);
+        const matchesGrupo = !grupo || r.grupo === grupo;
+        const matchesTipo = !tipo || r.tipo === tipo;
+        return matchesTexto && matchesGrupo && matchesTipo;
+    });
+
+    // Ordenar
+    filtrados.sort((a, b) => {
+        const dA = new Date(a.fecha).getTime();
+        const dB = new Date(b.fecha).getTime();
+        return state.sortAsc ? dA - dB : dB - dA;
+    });
+
+    // Actualizar gráfico si es visible
+    const dashContainer = document.getElementById('g-dashboard-container');
+    if (dashContainer && !dashContainer.classList.contains('hidden')) {
+        renderizarOActualizarGraficoGlobal(filtrados);
+    }
+
+    const container = document.getElementById('registros-global-lista');
+    if (filtrados.length === 0) {
+        container.innerHTML = '<tr><td colspan="4" class="p-12 text-center text-gray-400 italic">No se han encontrado registros.</td></tr>';
+        return;
+    }
+
+    container.innerHTML = '';
+    filtrados.forEach(reg => {
+        const fecha = new Date(reg.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        let badgeColor = 'bg-blue-100 text-blue-700';
+        if (reg.tipo === 'Incidencia') badgeColor = 'bg-red-100 text-red-700';
+        if (reg.tipo === 'Felicitación') badgeColor = 'bg-green-100 text-green-700';
+        if (reg.tipo === 'Reunión') badgeColor = 'bg-amber-100 text-amber-700';
+
+        const vistaFam = (reg.vista_p1 || reg.vista_p2) ? 
+            '<span class="text-green-600 flex items-center gap-1"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path></svg> Visto</span>' : 
+            '<span class="text-gray-400 flex items-center gap-1"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path></svg> Pendiente</span>';
+
+        const respFam = (reg.comentario_p1 || reg.comentario_p2) ? 
+            '<span class="text-blue-600 flex items-center gap-1"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z"></path></svg> Respondido</span>' : 
+            '';
+
+        container.innerHTML += `
+            <tr class="hover:bg-gray-50 transition-colors cursor-pointer" onclick="verDetalleRegistroGlobal('${reg.id}')">
+                <td class="px-6 py-4 text-xs text-gray-500 font-mono">${fecha}</td>
+                <td class="px-6 py-4">
+                    <div class="text-sm font-bold text-gray-900">${reg.estudiante_nombre}</div>
+                    <div class="text-[10px] text-gray-400 uppercase font-bold">${reg.grupo}</div>
+                </td>
+                <td class="px-6 py-4">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${badgeColor}">${reg.tipo}</span>
+                </td>
+                <td class="px-6 py-4">
+                    <div class="flex flex-col gap-1 text-[10px] font-bold uppercase">
+                        ${vistaFam}
+                        ${respFam}
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function toggleDashboardGlobal() {
+    const container = document.getElementById('g-dashboard-container');
+    const label = document.getElementById('g-label-toggle-stats');
+    if (container) {
+        const isHidden = container.classList.toggle('hidden');
+        if (label) label.innerText = isHidden ? 'Ver Estadísticas' : 'Ocultar Estadísticas';
+        if (!isHidden) {
+            filtrarYMostrarRegistrosGlobal();
+            window.scrollTo({ top: container.offsetTop - 20, behavior: 'smooth' });
+        }
+    }
+}
+
+function toggleSortOrderGlobal() {
+    state.sortAsc = !state.sortAsc;
+    const label = document.getElementById('g-sort-label');
+    const icon = document.getElementById('g-sort-icon');
+    label.innerText = state.sortAsc ? 'Más antiguos' : 'Más recientes';
+    icon.style.transform = state.sortAsc ? 'rotate(180deg)' : 'rotate(0deg)';
+    filtrarYMostrarRegistrosGlobal();
+}
+
+function limpiarFiltroTextoGlobal() {
+    document.getElementById('g-filtro-texto').value = '';
+    filtrarYMostrarRegistrosGlobal();
+}
+
+function cambiarTipoGraficoGlobal(tipo) {
+    state.dashboardChartType = tipo;
+    const btnBar = document.getElementById('g-btn-chart-bar');
+    const btnLine = document.getElementById('g-btn-chart-line');
+    if (tipo === 'bar') {
+        btnBar.className = 'px-3 py-1 text-xs font-bold rounded-md transition-all bg-white text-accent shadow-sm';
+        btnLine.className = 'px-3 py-1 text-xs font-bold rounded-md transition-all text-gray-500 hover:text-gray-700';
+    } else {
+        btnLine.className = 'px-3 py-1 text-xs font-bold rounded-md transition-all bg-white text-accent shadow-sm';
+        btnBar.className = 'px-3 py-1 text-xs font-bold rounded-md transition-all text-gray-500 hover:text-gray-700';
+    }
+    filtrarYMostrarRegistrosGlobal();
+}
+
+function renderizarOActualizarGraficoGlobal(registros) {
+    const { labels, series } = procesarDatosGrafico(registros);
+    const chartEl = document.querySelector("#g-chart-element");
+    if (!chartEl) return;
+
+    const options = {
+        series: series,
+        colors: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b'],
+        plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
+        stroke: { curve: 'smooth', width: state.dashboardChartType === 'line' ? 3 : 0 },
+        markers: { size: state.dashboardChartType === 'line' ? 4 : 0, strokeWidth: 2, hover: { size: 6 } },
+        xaxis: {
+            categories: labels,
+            labels: { style: { colors: '#94a3b8', fontSize: '10px', fontWeight: 600 } },
+            axisBorder: { show: false },
+            axisTicks: { show: false },
+            crosshairs: { show: false, width: 0, opacity: 0, stroke: { width: 0, color: 'transparent' }, fill: { type: 'solid', color: 'transparent' } },
+            tooltip: { enabled: false }
+        },
+        yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
+        grid: { borderColor: '#f1f5f9', strokeDashArray: 4, padding: { left: 10, right: 10 } },
+        legend: { position: 'top', horizontalAlign: 'right', fontSize: '11px', fontWeight: 700, markers: { radius: 12 } },
+        tooltip: { shared: true, intersect: false, theme: 'light', y: { formatter: function(val) { return val + (val === 1 ? " anotación" : " anotaciones") } } },
+        states: {
+            normal: { filter: { type: 'none', value: 0 } },
+            hover: { filter: { type: 'none', value: 0 } },
+            active: { allowMultipleDataPointsSelection: false, filter: { type: 'none', value: 0 } }
+        },
+        chart: {
+            type: state.dashboardChartType,
+            height: 320,
+            stacked: state.dashboardChartType === 'bar',
+            toolbar: { show: false },
+            zoom: { enabled: false },
+            selection: { enabled: false },
+            fontFamily: 'inherit',
+            animations: { enabled: true },
+            events: {
+                mounted: function(chart) {
+                    if (chart && chart.el) {
+                        chart.el.querySelectorAll('title, desc').forEach(el => el.remove());
+                    }
+                },
+                updated: function(chart) {
+                    if (chart && chart.el) {
+                        chart.el.querySelectorAll('title, desc').forEach(el => el.remove());
+                    }
+                }
+            }
+        }
+    };
+
+    if (!state.dashboardChartGlobal) {
+        state.dashboardChartGlobal = new ApexCharts(chartEl, options);
+        state.dashboardChartGlobal.render();
+    } else {
+        state.dashboardChartGlobal.updateOptions({
+            chart: { type: state.dashboardChartType, stacked: state.dashboardChartType === 'bar' },
+            stroke: { width: state.dashboardChartType === 'line' ? 3 : 0 },
+            markers: { size: state.dashboardChartType === 'line' ? 4 : 0 }
+        }, false, true);
+        state.dashboardChartGlobal.updateSeries(series);
+    }
+}
+
+function verDetalleRegistroGlobal(id) {
+    toggleLoader(true);
+    google.script.run
+        .withSuccessHandler(response => {
+            toggleLoader(false);
+            if (response && response.success) {
+                mostrarModalDetalle(response.data);
+            } else {
+                showAlert('Error', (response ? response.error : 'Sin respuesta'), 'error');
+            }
+        })
+        .withFailureHandler(err => {
+            toggleLoader(false);
+            showAlert('Error', 'Fallo de conexión: ' + err.message, 'error');
+        })
+        .obtenerDetalleRegistroStaff(id);
+}
+
+</script>

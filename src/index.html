@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= appName ?></title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Quill Rich Text Editor -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <?!= include('styles') ?>
+    <style>
+        :root {
+            --accent-color: <?= accentColor ?>;
+        }
+        .bg-accent { background-color: var(--accent-color); }
+        .text-accent { color: var(--accent-color); }
+        .border-accent { border-color: var(--accent-color); }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans min-h-screen flex flex-col">
+
+    <!-- Navegación -->
+    <nav class="bg-accent text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <? if (logoUrl) { ?>
+                        <img src="<?= logoUrl ?>" alt="Logo" class="h-10 w-auto object-contain cursor-pointer" onclick="navegar('inicio')">
+                    <? } ?>
+                    <span class="text-xl font-bold tracking-tight cursor-pointer" onclick="navegar('inicio')"><?= appName ?></span>
+                </div>
+                <div id="user-info" class="hidden sm:block text-sm opacity-90">
+                    Cargando usuario...
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Overlay de carga global -->
+    <div id="global-loader" class="hidden fixed inset-0 bg-gray-900 bg-opacity-30 z-[100] flex items-center justify-center">
+        <div class="bg-white p-4 rounded-lg shadow-xl flex items-center gap-4">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
+            <span class="font-medium text-gray-700">Procesando...</span>
+        </div>
+    </div>
+
+    <!-- Modal de Diálogo Genérico (Alert/Confirm) -->
+    <div id="modal-dialog" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-[150] flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-2xl max-w-md w-full overflow-hidden transform transition-all fade-in">
+            <div id="dialog-header" class="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
+                <div id="dialog-icon-container" class="rounded-full p-2">
+                    <svg id="dialog-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"></svg>
+                </div>
+                <h3 id="dialog-title" class="text-lg font-bold text-gray-800"></h3>
+            </div>
+            <div class="px-6 py-6">
+                <p id="dialog-message" class="text-gray-600 leading-relaxed"></p>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3">
+                <button id="dialog-cancel" class="hidden px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-200 rounded-md transition-colors">Cancelar</button>
+                <button id="dialog-ok" class="px-6 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition-all">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenedor Principal -->
+    <main class="w-full max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 flex-grow">
+        <div id="app" class="w-full px-4 py-6 sm:px-0">
+            <!-- El contenido se cargará dinámicamente vía JavaScript -->
+            <div id="loading" class="flex flex-col items-center justify-center min-h-[50vh]">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+                <p class="mt-4 text-gray-600">Iniciando aplicación...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Pie de página -->
+    <footer id="main-footer" class="bg-white border-t border-gray-200 py-6 mt-auto hidden text-center">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center gap-2">
+            <div id="footer-logo-container">
+                <? if (footerLogoUrl) { ?>
+                    <? if (appFooterLogoLinkUrl) { ?>
+                        <a href="<?= appFooterLogoLinkUrl ?>" target="_blank" class="block">
+                            <img src="<?= footerLogoUrl ?>" alt="Logo Footer" class="h-12 w-auto grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all">
+                        </a>
+                    <? } else { ?>
+                        <img src="<?= footerLogoUrl ?>" alt="Logo Footer" class="h-12 w-auto grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all">
+                    <? } ?>
+                <? } ?>
+            </div>
+            <p id="footer-custom-text" class="text-sm text-gray-500 max-w-2xl mx-auto"><?= footerText ?></p>
+        </div>
+    </footer>
+
+    <!-- Modal de Detalles de Registro (Familia) -->
+    <div id="modal-detalle" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-[150] flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div id="detalle-contenido" class="overflow-y-auto flex-grow">
+                <!-- Se rellena dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ApexCharts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+    <?!= include('scripts') ?>
+    <script>
+        // Inyectar token de la URL si existe
+        window.URL_TOKEN = '<?= token ?>' === 'null' ? null : '<?= token ?>';
+    </script>
+</body>
+</html>
