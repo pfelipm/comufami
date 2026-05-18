@@ -52,7 +52,7 @@ function listarEstudiantes() {
 /**
  * Guarda o actualiza un estudiante. Los supervisores no tienen permiso de escritura.
  */
-function guardarEstudiante(estudiante) {
+function guardarEstudiante(estudiante, esNuevo) {
   try {
     const user = obtenerUsuarioActual_();
     if (!user || user.rol === 'Supervisor') throw new Error('No tiene permisos para guardar estudiantes.');
@@ -70,7 +70,10 @@ function guardarEstudiante(estudiante) {
     const idBuscado = estudiante.id.toString().trim();
     for (let i = 1; i < datos.length; i++) {
       if (datos[i][0].toString().trim() === idBuscado) {
-        // Si ya existe, verificar que el usuario tuviera acceso al grupo anterior también (opcional pero seguro)
+        // Si estamos creando uno nuevo y ya existe el ID, lanzamos error
+        if (esNuevo) throw new Error('El NIA / ID ya existe en la base de datos.');
+
+        // Si ya existe (estamos editando), verificar que el usuario tuviera acceso al grupo anterior también
         const grupoAnterior = datos[i][2].toString();
         if (!verificarAccesoGrupo_(user, grupoAnterior)) {
           throw new Error('No tiene permiso para modificar este estudiante (pertenece a un grupo no autorizado).');

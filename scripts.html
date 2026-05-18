@@ -24,6 +24,7 @@ const state = {
     pin: null, // PIN del progenitor actual
     parentIndex: null, // 1 o 2 (según el PIN introducido)
     quill: null, // Instancia del editor enriquecido
+    isEdit: false, // Indica si el modal actual es de edición
     eSortAsc: true,
     uSortAsc: true,
     sortAsc: false, // Para el portal de familia
@@ -804,6 +805,7 @@ function validarFormatoPin(inputEl) {
 
 function mostrarFormularioEstudiante() {
     toggleLoader(true);
+    state.isEdit = false;
     actualizarCacheGrupos(() => {
         document.getElementById('modal-e-titulo').innerText = 'Nuevo estudiante';
         document.getElementById('e-id').disabled = false;
@@ -837,6 +839,7 @@ function mostrarFormularioEstudiante() {
 
 function editarEstudiante(e) {
     toggleLoader(true);
+    state.isEdit = true;
     actualizarCacheGrupos(() => {
         document.getElementById('modal-e-titulo').innerText = 'Editar estudiante';
         document.getElementById('e-id').value = e.id;
@@ -906,7 +909,7 @@ function guardarEstudianteFront() {
         toggleLoader(false);
         if (response && response.success) { cerrarModalEstudiante(); cargarEstudiantes(); }
         else showAlert('Error', 'Error: ' + (response ? response.error : 'Sin respuesta del servidor'), 'error');
-    }).withFailureHandler(err => { toggleLoader(false); showAlert('Error', 'Error de conexión: ' + err.message, 'error'); }).guardarEstudiante(estudiante);
+    }).withFailureHandler(err => { toggleLoader(false); showAlert('Error', 'Error de conexión: ' + err.message, 'error'); }).guardarEstudiante(estudiante, !state.isEdit);
 }
 
 function cerrarModalEstudiante() { document.getElementById('modal-estudiante').classList.add('hidden'); }
@@ -1233,6 +1236,7 @@ function limpiarFiltroUsuarios() {
 
 function mostrarFormularioUsuario() {
     toggleLoader(true);
+    state.isEdit = false;
     actualizarCacheGrupos(() => {
         document.getElementById('modal-titulo').innerText = 'Nuevo usuario';
         document.getElementById('u-email').disabled = false;
@@ -1258,6 +1262,7 @@ function mostrarFormularioUsuario() {
 
 function editarUsuario(u) {
     toggleLoader(true);
+    state.isEdit = true;
     actualizarCacheGrupos(() => {
         document.getElementById('modal-titulo').innerText = 'Editar Usuario';
         document.getElementById('u-email').value = u.email;
@@ -1299,7 +1304,7 @@ function guardarUsuario() {
         toggleLoader(false);
         if (response.success) { cerrarModal(); cargarUsuarios(); }
         else showAlert('Error', 'Error: ' + response.error, 'error');
-    }).withFailureHandler(err => { toggleLoader(false); showAlert('Error', 'Error: ' + err, 'error'); }).guardarUsuario(usuario);
+    }).withFailureHandler(err => { toggleLoader(false); showAlert('Error', 'Error: ' + err, 'error'); }).guardarUsuario(usuario, !state.isEdit);
 }
 
 function cerrarModal() { document.getElementById('modal-usuario').classList.add('hidden'); }

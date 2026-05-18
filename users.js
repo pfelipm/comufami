@@ -37,7 +37,7 @@ function listarUsuarios() {
 /**
  * Guarda o actualiza un usuario en la base de datos.
  */
-function guardarUsuario(usuario) {
+function guardarUsuario(usuario, esNuevo) {
   if (!esAdministrador_()) {
     return { success: false, error: 'No tienes permisos.' };
   }
@@ -51,6 +51,7 @@ function guardarUsuario(usuario) {
     const emailBuscado = usuario.email.toLowerCase().trim();
     for (let i = 1; i < datos.length; i++) {
       if (datos[i][0].toString().toLowerCase().trim() === emailBuscado) {
+        if (esNuevo) throw new Error('El correo electrónico ya está registrado para otro usuario.');
         filaEncontrada = i + 1;
         break;
       }
