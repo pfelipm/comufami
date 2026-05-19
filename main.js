@@ -165,10 +165,21 @@ function obtenerAjuste_(parametro) {
 function obtenerDatosIniciales() {
   try {
     const emailReal = Session.getActiveUser().getEmail().toLowerCase().trim();
+    const modoMantenimiento = obtenerAjuste_('MAINTENANCE_MODE') === 'true';
     
-    // 1. Verificar si el usuario real es Administrador para permitir impersonación
+    // 1. Verificar si el usuario real es Administrador
     const usuarioReal = obtenerUsuarioPorEmail_(emailReal);
     const esAdminReal = usuarioReal && usuarioReal.rol === 'Administrador';
+
+    // Bloqueo por mantenimiento (solo si no es admin real)
+    if (modoMantenimiento && !esAdminReal) {
+      return {
+        success: true,
+        tipo: 'MANTENIMIENTO',
+        appName: obtenerAjuste_('APP_NAME') || APP_CONFIG.NOMBRE,
+        accentColor: obtenerAjuste_('APP_ACCENT_COLOR') || '#1d4ed8'
+      };
+    }
 
     let emailAVisualizar = emailReal;
     
