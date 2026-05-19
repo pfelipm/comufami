@@ -1393,8 +1393,31 @@ function cargarAjustes() {
     google.script.run.withSuccessHandler(response => {
         const lista = document.getElementById('ajustes-lista');
         if (response.success) {
+            // Orden específico solicitado por el usuario
+            const ordenDeseado = [
+                'DEBUG_USER',
+                'MAINTENANCE_MODE',
+                'APP_WEBAPP_URL',
+                'APP_NAME',
+                'APP_ACCENT_COLOR',
+                'APP_LOGO_URL',
+                'APP_FOOTER_LOGO_URL',
+                'APP_FOOTER_LOGO_LINK_URL',
+                'APP_FOOTER_TEXT'
+            ];
+
+            const ajustes = response.data;
+            // Ordenar los ajustes según el array de ordenDeseado
+            ajustes.sort((a, b) => {
+                let indexA = ordenDeseado.indexOf(a.parametro);
+                let indexB = ordenDeseado.indexOf(b.parametro);
+                if (indexA === -1) indexA = 99; // Parámetros nuevos al final
+                if (indexB === -1) indexB = 99;
+                return indexA - indexB;
+            });
+
             let html = '';
-            response.data.forEach(a => {
+            ajustes.forEach(a => {
                 html += `
                     <div class="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-gray-50 transition-colors">
                         <div class="flex-grow">

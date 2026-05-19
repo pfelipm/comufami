@@ -52,13 +52,14 @@ function inicializarApp() {
       nombre: APP_CONFIG.TABLAS.AJUSTES,
       cabeceras: ['Parametro', 'Valor'],
       datosIniciales: [
-        ['MAINTENANCE_MODE', 'false'],
-        ['APP_NAME', APP_CONFIG.NOMBRE],
         ['DEBUG_USER', ''],
+        ['MAINTENANCE_MODE', 'false'],
+        ['APP_WEBAPP_URL', ''],
+        ['APP_NAME', APP_CONFIG.NOMBRE],
         ['APP_ACCENT_COLOR', '#1d4ed8'],
         ['APP_LOGO_URL', ''],
-        ['APP_WEBAPP_URL', ''],
         ['APP_FOOTER_LOGO_URL', ''],
+        ['APP_FOOTER_LOGO_LINK_URL', ''],
         ['APP_FOOTER_TEXT', 'Plataforma de comunicación centro-familias.']
       ]
     },
