@@ -247,7 +247,7 @@ function navegar(vista) {
             renderDashboardGlobal(appContainer);
             break;
         case 'ajustes':
-            appContainer.innerHTML = '<div class="p-10 text-center">Módulo de configuración en desarrollo...</div>';
+            renderAjustes(appContainer);
             break;
         case 'login-familia':
             renderLoginFamiliaManual(appContainer);
@@ -1353,6 +1353,82 @@ function eliminarUsuarioFront(email) {
 }
 
 function cerrarModal() { document.getElementById('modal-usuario').classList.add('hidden'); }
+
+/**
+ * CONFIGURACIÓN (AJUSTES)
+ */
+function renderAjustes(container) {
+    container.innerHTML = `
+        <div class="fade-in">
+            <div class="flex items-center gap-4 mb-6">
+                <button onclick="navegar('inicio')" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                </button>
+                <h1 class="text-2xl font-bold text-gray-800">Configuración del sistema</h1>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100">
+                <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                    <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider">Parámetros de la aplicación</h2>
+                </div>
+                <div id="ajustes-lista" class="divide-y divide-gray-100">
+                    <div class="p-10 text-center text-gray-400">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4"></div>
+                        Cargando ajustes...
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    cargarAjustes();
+}
+
+function cargarAjustes() {
+    google.script.run.withSuccessHandler(response => {
+        const lista = document.getElementById('ajustes-lista');
+        if (response.success) {
+            let html = '';
+            response.data.forEach(a => {
+                html += `
+                    <div class="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-gray-50 transition-colors">
+                        <div class="flex-grow">
+                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">${a.parametro}</label>
+                            <input type="text" id="adj-${a.parametro}" value="${a.valor}" 
+                                   class="w-full border border-gray-200 rounded-md p-2 text-sm focus:border-accent outline-none bg-transparent focus:bg-white transition-all">
+                        </div>
+                        <div class="sm:pt-5">
+                            <button onclick="guardarAjusteFront('${a.parametro}')" 
+                                    class="w-full sm:w-auto bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-bold hover:bg-gray-50 transition-colors">
+                                Actualizar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            lista.innerHTML = html || '<div class="p-10 text-center text-gray-500">No hay ajustes configurados.</div>';
+        } else {
+            lista.innerHTML = `<div class="p-10 text-center text-red-500 font-bold">${response.error}</div>`;
+        }
+    }).listarAjustes();
+}
+
+function guardarAjusteFront(parametro) {
+    const valor = document.getElementById(`adj-${parametro}`).value;
+    showConfirm('Confirmar cambio', `¿Seguro que deseas actualizar el valor de ${parametro}?`, () => {
+        toggleLoader(true);
+        google.script.run.withSuccessHandler(response => {
+            toggleLoader(false);
+            if (response.success) {
+                showAlert('Éxito', 'Ajuste actualizado correctamente.', 'success');
+            } else {
+                showAlert('Error', response.error, 'error');
+            }
+        }).withFailureHandler(err => {
+            toggleLoader(false);
+            showAlert('Error', 'Error de conexión: ' + err.message, 'error');
+        }).guardarAjuste(parametro, valor);
+    });
+}
 
 /**
  * INICIO Y AUXILIARES

@@ -289,3 +289,70 @@ function registrarActividad_(email, accion, detalles) {
     console.error('Error al registrar actividad:', e);
   }
 }
+
+/**
+ * Lista todos los ajustes disponibles en la pestaña de Ajustes.
+ */
+function listarAjustes() {
+  if (!esAdministrador_()) throw new Error('No tiene permisos para acceder a los ajustes.');
+  
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const hoja = ss.getSheetByName(APP_CONFIG.TABLAS.AJUSTES);
+    if (!hoja) return { success: false, error: 'No se encontró la hoja de ajustes.' };
+    
+    const datos = hoja.getDataRange().getValues();
+    const ajustes = [];
+    
+    // Saltamos la cabecera e ignoramos filas vacías
+    for (let i = 1; i < datos.length; i++) {
+      if (datos[i][0]) {
+        ajustes.push({
+          parametro: datos[i][0].toString(),
+          valor: datos[i][1].toString()
+        });
+      }
+    }
+    
+    return { success: true, data: ajustes };
+  } catch (e) {
+    console.error('Error en listarAjustes:', e);
+    return { success: false, error: e.toString() };
+  }
+}
+
+/**
+ * Guarda o actualiza un ajuste específico.
+ */
+function guardarAjuste(parametro, valor) {
+  const user = obtenerUsuarioActual_();
+  if (!user || user.rol !== 'Administrador') throw new Error('No tiene permisos para modificar ajustes.');
+  
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const hoja = ss.getSheetByName(APP_CONFIG.TABLAS.AJUSTES);
+    if (!hoja) return { success: false, error: 'No se encontró la hoja de ajustes.' };
+    
+    const datos = hoja.getDataRange().getValues();
+    let filaEncontrada = -1;
+    
+    for (let i = 1; i < datos.length; i++) {
+      if (datos[i][0].toString() === parametro) {
+        filaEncontrada = i + 1;
+        break;
+      }
+    }
+    
+    if (filaEncontrada !== -1) {
+      hoja.getRange(filaEncontrada, 2).setValue(valor);
+    } else {
+      hoja.appendRow([parametro, valor]);
+    }
+    
+    registrarActividad_(user.email, 'MODIFICAR_AJUSTE', `Ajuste ${parametro} actualizado a: ${valor}`);
+    return { success: true };
+  } catch (e) {
+    console.error('Error en guardarAjuste:', e);
+    return { success: false, error: e.toString() };
+  }
+}
