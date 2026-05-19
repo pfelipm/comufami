@@ -37,6 +37,15 @@ function verificarMantenimiento_() {
 }
 
 /**
+ * Obtiene la URL de la Web App asegurando que sea la versión /exec.
+ * @private
+ */
+function obtenerUrlApp_() {
+  const url = ScriptApp.getService().getUrl();
+  return url.replace(/\/dev$/, '/exec');
+}
+
+/**
  * Función de entrada para la Web App.
  */
 function doGet(e) {
@@ -196,7 +205,7 @@ function obtenerDatosIniciales() {
         footerLogoUrl,
         appFooterLogoLinkUrl,
         footerText,
-        urlApp: ScriptApp.getService().getUrl()
+        urlApp: obtenerUrlApp_()
       };
     }
 

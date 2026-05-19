@@ -216,7 +216,7 @@ function guardarRegistroYNotificar(datos) {
     sheet.appendRow(nuevaFila);
 
     // Enviar notificación HTML
-    const urlApp = ScriptApp.getService().getUrl();
+    const urlApp = obtenerUrlApp_();
     const enlaceUnico = `${urlApp}?token=${token}`;
     const htmlFinal = datos.notificacion_cuerpo.replace(/\[ENLACE_TOKEN\]/g, enlaceUnico);
     const textoPlano = htmlFinal.replace(/<[^>]*>?/gm, ''); // Fallback básico a texto plano
