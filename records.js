@@ -259,6 +259,10 @@ function guardarRegistroYNotificar(datos) {
  */
 function validarTokenYPin(token, pin) {
   try {
+    if (verificarMantenimiento_()) {
+      return { success: true, tipo: 'MANTENIMIENTO' };
+    }
+
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheetRegistros = ss.getSheetByName(APP_CONFIG.TABLAS.REGISTROS);
     const datosRegistros = sheetRegistros.getDataRange().getValues();

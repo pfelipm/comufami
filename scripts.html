@@ -521,7 +521,11 @@ function intentarLoginFamilia() {
     google.script.run
         .withSuccessHandler(response => {
             toggleLoader(false);
-            if (response.success) {
+            if (response && response.tipo === 'MANTENIMIENTO') {
+                renderMantenimiento();
+                return;
+            }
+            if (response && response.success) {
                 state.user = response.data;
                 document.getElementById('user-info').innerText = `${state.user.nombre} (Familia)`;
                 document.getElementById('user-info').classList.remove('hidden');
@@ -1739,7 +1743,11 @@ function ejecutarLoginFamiliaManual(event) {
     google.script.run
         .withSuccessHandler(response => {
             toggleLoader(false);
-            if (response.success) {
+            if (response && response.tipo === 'MANTENIMIENTO') {
+                renderMantenimiento();
+                return;
+            }
+            if (response && response.success) {
                 state.user = response.data;
                 state.pin = pin;
                 document.getElementById('user-info').innerText = `${state.user.nombre} (Familia)`;

@@ -3,6 +3,10 @@
  */
 function loginFamilia(email, pin) {
   try {
+    if (verificarMantenimiento_()) {
+      return { success: true, tipo: 'MANTENIMIENTO' };
+    }
+
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const hoja = ss.getSheetByName(APP_CONFIG.TABLAS.FAMILIAS);
     const datos = hoja.getDataRange().getValues();

@@ -18,6 +18,22 @@ const APP_CONFIG = {
 };
 
 /**
+ * Verifica si la aplicación está en modo mantenimiento.
+ * Lanza un error o devuelve un objeto de bloqueo si es necesario.
+ * @private
+ */
+function verificarMantenimiento_() {
+  const modoMantenimiento = obtenerAjuste_('MAINTENANCE_MODE') === 'true';
+  if (!modoMantenimiento) return false;
+
+  const emailReal = Session.getActiveUser().getEmail().toLowerCase().trim();
+  const usuarioReal = obtenerUsuarioPorEmail_(emailReal);
+  const esAdminReal = usuarioReal && usuarioReal.rol === 'Administrador';
+
+  return !esAdminReal;
+}
+
+/**
  * Función de entrada para la Web App.
  */
 function doGet(e) {
@@ -27,9 +43,7 @@ function doGet(e) {
   const footerText = obtenerAjuste_('APP_FOOTER_TEXT') || '';
   
   // Verificación de modo mantenimiento antes de cargar la interfaz
-  const modoMantenimiento = obtenerAjuste_('MAINTENANCE_MODE') === 'true';
-  
-  if (modoMantenimiento && !esAdministrador_()) {
+  if (verificarMantenimiento_()) {
     return HtmlService.createHtmlOutput('<h1>Modo Mantenimiento</h1><p>La aplicación está siendo actualizada. Por favor, vuelve a intentarlo más tarde.</p>');
   }
 
@@ -165,14 +179,9 @@ function obtenerAjuste_(parametro) {
 function obtenerDatosIniciales() {
   try {
     const emailReal = Session.getActiveUser().getEmail().toLowerCase().trim();
-    const modoMantenimiento = obtenerAjuste_('MAINTENANCE_MODE') === 'true';
     
-    // 1. Verificar si el usuario real es Administrador
-    const usuarioReal = obtenerUsuarioPorEmail_(emailReal);
-    const esAdminReal = usuarioReal && usuarioReal.rol === 'Administrador';
-
     // Bloqueo por mantenimiento (solo si no es admin real)
-    if (modoMantenimiento && !esAdminReal) {
+    if (verificarMantenimiento_()) {
       return {
         success: true,
         tipo: 'MANTENIMIENTO',
@@ -180,6 +189,10 @@ function obtenerDatosIniciales() {
         accentColor: obtenerAjuste_('APP_ACCENT_COLOR') || '#1d4ed8'
       };
     }
+
+    // 1. Verificar si el usuario real es Administrador para permitir impersonación
+    const usuarioReal = obtenerUsuarioPorEmail_(emailReal);
+    const esAdminReal = usuarioReal && usuarioReal.rol === 'Administrador';
 
     let emailAVisualizar = emailReal;
     
