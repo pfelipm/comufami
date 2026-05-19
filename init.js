@@ -53,8 +53,8 @@ function inicializarApp() {
       cabeceras: ['Parametro', 'Valor'],
       datosIniciales: [
         ['DEBUG_USER', ''],
-        ['MAINTENANCE_MODE', 'false'],
         ['APP_WEBAPP_URL', ''],
+        ['MAINTENANCE_MODE', 'false'],
         ['APP_NAME', APP_CONFIG.NOMBRE],
         ['APP_ACCENT_COLOR', '#1d4ed8'],
         ['APP_LOGO_URL', ''],
