@@ -216,13 +216,6 @@ function obtenerDatosIniciales() {
     // 3. Intentar buscar el email (real o impersonado) en la tabla de Usuarios (Personal)
     const usuarioPersonal = obtenerUsuarioPorEmail_(emailAVisualizar);
 
-    const appName = obtenerAjuste_('APP_NAME') || APP_CONFIG.NOMBRE;
-    const accentColor = obtenerAjuste_('APP_ACCENT_COLOR') || '#1d4ed8';
-    const logoUrl = obtenerAjuste_('APP_LOGO_URL') || '';
-    const footerLogoUrl = obtenerAjuste_('APP_FOOTER_LOGO_URL') || '';
-    const appFooterLogoLinkUrl = obtenerAjuste_('APP_FOOTER_LOGO_LINK_URL') || '';
-    const footerText = obtenerAjuste_('APP_FOOTER_TEXT') || '';
-
     if (usuarioPersonal) {
       return {
         success: true,
