@@ -23,7 +23,10 @@ const APP_CONFIG = {
  * @private
  */
 function verificarMantenimiento_() {
-  const modoMantenimiento = obtenerAjuste_('MAINTENANCE_MODE') === 'true';
+  const val = obtenerAjuste_('MAINTENANCE_MODE');
+  // Manejar tanto booleanos (true) como strings ("true", "TRUE")
+  const modoMantenimiento = val === true || (val && val.toString().toLowerCase() === 'true');
+  
   if (!modoMantenimiento) return false;
 
   const emailReal = Session.getActiveUser().getEmail().toLowerCase().trim();
