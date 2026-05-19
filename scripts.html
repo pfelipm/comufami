@@ -382,7 +382,7 @@ function cargarEstudiantesDocente() {
                 selectGrupo.innerHTML += `<option value="${g}">${g}</option>`;
             });
         } else {
-            showAlert('Error', 'Error al cargar alumnos: ' + response.error, 'error');
+            showAlert('Error', response.error, 'error');
         }
     }).obtenerEstudiantesDocente();
 }
@@ -453,7 +453,7 @@ function irAPaso2() {
             }
             state.quill.root.innerHTML = response.data.cuerpo;
         } else {
-            showAlert('Error', 'Error al generar previsualización: ' + response.error, 'error');
+            showAlert('Error', response.error, 'error');
         }
     }).generarPrevisualizacionNotificacion(datos);
 }
@@ -480,7 +480,7 @@ function enviarRegistroFinal() {
                 document.getElementById('paso-2').classList.add('hidden');
                 document.getElementById('paso-exito').classList.remove('hidden');
             } else {
-                showAlert('Error', 'Error al guardar: ' + response.error, 'error');
+                showAlert('Error', response.error, 'error');
             }
         }).guardarRegistroYNotificar(finalData);
     });
@@ -755,8 +755,9 @@ function filtrarYMostrarEstudiantes() {
                     </div>
                 </td>
                 ${state.user.rol !== 'Supervisor' ? `
-                <td class="px-6 py-4 text-sm">
+                <td class="px-6 py-4 text-sm flex gap-3">
                     <button onclick='editarEstudiante(${JSON.stringify(e)})' class="text-accent hover:underline font-bold">Editar</button>
+                    <button onclick='eliminarEstudianteFront("${e.id}", "${e.nombre}")' class="text-red-600 hover:underline font-bold">Borrar</button>
                 </td>` : ''}
             </tr>`;
     });
@@ -908,8 +909,26 @@ function guardarEstudianteFront() {
     google.script.run.withSuccessHandler(response => {
         toggleLoader(false);
         if (response && response.success) { cerrarModalEstudiante(); cargarEstudiantes(); }
-        else showAlert('Error', 'Error: ' + (response ? response.error : 'Sin respuesta del servidor'), 'error');
+        else showAlert('Error', (response ? response.error : 'Sin respuesta del servidor'), 'error');
     }).withFailureHandler(err => { toggleLoader(false); showAlert('Error', 'Error de conexión: ' + err.message, 'error'); }).guardarEstudiante(estudiante, !state.isEdit);
+}
+
+function eliminarEstudianteFront(id, nombre) {
+    showConfirm('Confirmar borrado', `¿Seguro que deseas eliminar al estudiante ${nombre}? Esta acción no se puede deshacer.`, () => {
+        toggleLoader(true);
+        google.script.run.withSuccessHandler(response => {
+            toggleLoader(false);
+            if (response.success) {
+                showAlert('Éxito', 'Estudiante eliminado correctamente.', 'success');
+                cargarEstudiantes();
+            } else {
+                showAlert('No se pudo eliminar', response.error, 'error');
+            }
+        }).withFailureHandler(err => {
+            toggleLoader(false);
+            showAlert('Error', 'Error de conexión: ' + err.message, 'error');
+        }).eliminarEstudiante(id);
+    });
 }
 
 function cerrarModalEstudiante() { document.getElementById('modal-estudiante').classList.add('hidden'); }
@@ -1005,7 +1024,7 @@ function guardarGrupo() {
     google.script.run.withSuccessHandler(response => {
         toggleLoader(false);
         if (response.success) { cerrarModalGrupo(); cargarGrupos(); actualizarCacheGrupos(); }
-        else showAlert('Error', 'Error: ' + response.error, 'error');
+        else showAlert('Error', response.error, 'error');
     }).withFailureHandler(err => { toggleLoader(false); showAlert('Error', 'Error: ' + err, 'error'); }).guardarGrupo(grupo);
 }
 
@@ -1015,7 +1034,7 @@ function eliminarGrupo(codigo) {
         google.script.run.withSuccessHandler(response => {
             toggleLoader(false);
             if (response.success) { cargarGrupos(); actualizarCacheGrupos(); }
-            else showAlert('Error', 'Error: ' + response.error, 'error');
+            else showAlert('Error', response.error, 'error');
         }).withFailureHandler(err => { toggleLoader(false); showAlert('Error', 'Error: ' + err, 'error'); }).eliminarGrupo(codigo);
     });
 }
@@ -1205,8 +1224,11 @@ function filtrarYMostrarUsuarios() {
                     <span class="px-2 py-1 text-[10px] font-bold uppercase rounded-full ${rolColor}">${u.rol}</span>
                 </td>
                 <td class="px-6 py-4 text-sm text-center font-mono text-gray-400 text-xs">${u.grupos || '-'}</td>
-                <td class="px-6 py-4 text-sm">
+                <td class="px-6 py-4 text-sm flex gap-3">
                     <button onclick='editarUsuario(${JSON.stringify(u)})' class="text-accent hover:underline font-bold">Editar</button>
+                    ${state.user.rol === 'Administrador' && u.email.toLowerCase() !== state.user.email.toLowerCase() ? `
+                        <button onclick='eliminarUsuarioFront("${u.email}")' class="text-red-600 hover:underline font-bold">Borrar</button>
+                    ` : ''}
                 </td>
             </tr>`;
     });
@@ -1303,8 +1325,31 @@ function guardarUsuario() {
     google.script.run.withSuccessHandler(response => {
         toggleLoader(false);
         if (response.success) { cerrarModal(); cargarUsuarios(); }
-        else showAlert('Error', 'Error: ' + response.error, 'error');
-    }).withFailureHandler(err => { toggleLoader(false); showAlert('Error', 'Error: ' + err, 'error'); }).guardarUsuario(usuario, !state.isEdit);
+        else showAlert('Error', response.error, 'error');
+    }).withFailureHandler(err => { toggleLoader(false); showAlert('Error', 'Error de conexión: ' + err.message, 'error'); }).guardarUsuario(usuario, !state.isEdit);
+}
+
+function eliminarUsuarioFront(email) {
+    if (email.toLowerCase() === state.user.email.toLowerCase()) {
+        showAlert('Acción no permitida', 'No puedes eliminar tu propia cuenta de usuario.', 'error');
+        return;
+    }
+
+    showConfirm('Confirmar borrado', `¿Seguro que deseas eliminar al usuario ${email}? Esta acción no se puede deshacer.`, () => {
+        toggleLoader(true);
+        google.script.run.withSuccessHandler(response => {
+            toggleLoader(false);
+            if (response.success) {
+                showAlert('Éxito', 'Usuario eliminado correctamente.', 'success');
+                cargarUsuarios();
+            } else {
+                showAlert('No se pudo eliminar', response.error, 'error');
+            }
+        }).withFailureHandler(err => {
+            toggleLoader(false);
+            showAlert('Error', 'Error de conexión: ' + err.message, 'error');
+        }).eliminarUsuario(email);
+    });
 }
 
 function cerrarModal() { document.getElementById('modal-usuario').classList.add('hidden'); }

@@ -147,3 +147,54 @@ function actualizarFamilia_(email, nombre, pinPropuesto) {
   }
 }
 
+
+/**
+ * Elimina un estudiante si no tiene registros asociados.
+ */
+function eliminarEstudiante(id) {
+  try {
+    const user = obtenerUsuarioActual_();
+    if (!user || user.rol === 'Supervisor') throw new Error('No tiene permisos para eliminar estudiantes.');
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    // 1. Verificar si tiene registros asociados
+    const hojaRegistros = ss.getSheetByName(APP_CONFIG.TABLAS.REGISTROS);
+    const datosRegistros = hojaRegistros.getDataRange().getValues();
+    const idStr = id.toString().trim();
+    
+    for (let i = 1; i < datosRegistros.length; i++) {
+      if (datosRegistros[i][1].toString().trim() === idStr) {
+        throw new Error('No se puede eliminar el estudiante porque tiene anotaciones de seguimiento asociadas.');
+      }
+    }
+
+    // 2. Buscar y eliminar al estudiante
+    const hojaEstudiantes = ss.getSheetByName(APP_CONFIG.TABLAS.ESTUDIANTES);
+    const datosEstudiantes = hojaEstudiantes.getDataRange().getValues();
+    let filaEstudiante = -1;
+    let grupoEstudiante = '';
+
+    for (let i = 1; i < datosEstudiantes.length; i++) {
+      if (datosEstudiantes[i][0].toString().trim() === idStr) {
+        filaEstudiante = i + 1;
+        grupoEstudiante = datosEstudiantes[i][2].toString();
+        break;
+      }
+    }
+
+    if (filaEstudiante === -1) throw new Error('Estudiante no encontrado.');
+
+    // Verificar permisos sobre el grupo
+    if (!verificarAccesoGrupo_(user, grupoEstudiante)) {
+      throw new Error('No tiene permiso para eliminar estudiantes de este grupo.');
+    }
+
+    hojaEstudiantes.deleteRow(filaEstudiante);
+    registrarActividad_(user.email, 'ELIMINAR_ESTUDIANTE', `Estudiante ${idStr} eliminado.`);
+    
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
+}

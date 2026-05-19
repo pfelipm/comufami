@@ -87,3 +87,46 @@ function registrarAuditoria_(accion, detalles) {
     console.error('Error en registrarAuditoria_:', e);
   }
 }
+
+/**
+ * Elimina un usuario por su email si no tiene registros asociados.
+ */
+function eliminarUsuario(email) {
+  if (!esAdministrador_()) {
+    return { success: false, error: 'No tienes permisos.' };
+  }
+
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const emailBuscado = email.toLowerCase().trim();
+    
+    // 1. Evitar que el usuario se borre a sí mismo
+    const emailActivo = Session.getActiveUser().getEmail().toLowerCase().trim();
+    if (emailBuscado === emailActivo) {
+      throw new Error('No puedes eliminar tu propia cuenta de usuario.');
+    }
+
+    // 2. Verificar si tiene registros de anotaciones asociados (como docente)
+    const hojaRegistros = ss.getSheetByName(APP_CONFIG.TABLAS.REGISTROS);
+    const datosRegistros = hojaRegistros.getDataRange().getValues();
+    for (let i = 1; i < datosRegistros.length; i++) {
+      if (datosRegistros[i][5].toString().toLowerCase().trim() === emailBuscado) {
+        throw new Error('No se puede eliminar el usuario porque ha registrado anotaciones de seguimiento en el sistema.');
+      }
+    }
+
+    // 3. Buscar y eliminar al usuario
+    const hojaUsuarios = ss.getSheetByName(APP_CONFIG.TABLAS.USUARIOS);
+    const datosUsuarios = hojaUsuarios.getDataRange().getValues();
+    for (let i = 1; i < datosUsuarios.length; i++) {
+      if (datosUsuarios[i][0].toString().toLowerCase().trim() === emailBuscado) {
+        hojaUsuarios.deleteRow(i + 1);
+        registrarAuditoria_('Eliminar Usuario', `Usuario ${emailBuscado} eliminado.`);
+        return { success: true };
+      }
+    }
+    return { success: false, error: 'Usuario no encontrado.' };
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
+}
