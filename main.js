@@ -45,11 +45,6 @@ function doGet(e) {
   const logoUrl = obtenerAjuste_('APP_LOGO_URL') || '';
   const footerText = obtenerAjuste_('APP_FOOTER_TEXT') || '';
   
-  // Verificación de modo mantenimiento antes de cargar la interfaz
-  if (verificarMantenimiento_()) {
-    return HtmlService.createHtmlOutput('<h1>Modo Mantenimiento</h1><p>La aplicación está siendo actualizada. Por favor, vuelve a intentarlo más tarde.</p>');
-  }
-
   const template = HtmlService.createTemplateFromFile('index');
   template.appName = appName;
   template.accentColor = accentColor;
@@ -183,13 +178,24 @@ function obtenerDatosIniciales() {
   try {
     const emailReal = Session.getActiveUser().getEmail().toLowerCase().trim();
     
+    const appName = obtenerAjuste_('APP_NAME') || APP_CONFIG.NOMBRE;
+    const accentColor = obtenerAjuste_('APP_ACCENT_COLOR') || '#1d4ed8';
+    const logoUrl = obtenerAjuste_('APP_LOGO_URL') || '';
+    const footerLogoUrl = obtenerAjuste_('APP_FOOTER_LOGO_URL') || '';
+    const appFooterLogoLinkUrl = obtenerAjuste_('APP_FOOTER_LOGO_LINK_URL') || '';
+    const footerText = obtenerAjuste_('APP_FOOTER_TEXT') || '';
+
     // Bloqueo por mantenimiento (solo si no es admin real)
     if (verificarMantenimiento_()) {
       return {
         success: true,
         tipo: 'MANTENIMIENTO',
-        appName: obtenerAjuste_('APP_NAME') || APP_CONFIG.NOMBRE,
-        accentColor: obtenerAjuste_('APP_ACCENT_COLOR') || '#1d4ed8'
+        appName,
+        accentColor,
+        logoUrl,
+        footerLogoUrl,
+        appFooterLogoLinkUrl,
+        footerText
       };
     }
 

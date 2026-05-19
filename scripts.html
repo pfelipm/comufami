@@ -2581,26 +2581,34 @@ function verDetalleRegistroGlobal(id) {
 
 function renderMantenimiento() {
     document.getElementById('app').innerHTML = `
-        <div class="fade-in flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
-            <div class="bg-orange-100 p-4 rounded-full mb-6">
-                <svg class="w-12 h-12 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                </svg>
+        <div class="fade-in flex flex-col items-center justify-center min-h-[60vh] text-center px-4 max-w-2xl mx-auto">
+            <div class="mb-8 p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div class="bg-orange-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-10 h-10 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"></path>
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-extrabold text-gray-900 mb-4 tracking-tight">Aplicación en mantenimiento</h1>
+                <p class="text-lg text-gray-600 leading-relaxed mb-8">
+                    Estamos realizando tareas de mejora para ofrecerte una mejor experiencia. 
+                    El servicio estará disponible de nuevo en unos minutos.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button onclick="window.location.reload()" 
+                            class="bg-accent text-white px-8 py-3 rounded-lg font-bold hover:shadow-lg transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+                        Reintentar ahora
+                    </button>
+                </div>
             </div>
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">Modo Mantenimiento</h1>
-            <p class="text-gray-600 max-w-md mx-auto leading-relaxed">
-                La aplicación está siendo actualizada para ofrecerte un mejor servicio. 
-                Por favor, vuelve a intentarlo en unos minutos.
-            </p>
-            <div class="mt-8">
-                <button onclick="window.location.reload()" class="bg-accent text-white px-6 py-2 rounded-md font-bold hover:shadow-lg transition-all">
-                    Reintentar ahora
-                </button>
-            </div>
+            <p class="text-gray-400 text-sm font-medium">Gracias por su paciencia.</p>
         </div>
     `;
     // Ocultar info de usuario si estuviera visible
-    document.getElementById('user-info').classList.add('hidden');
+    const userInfo = document.getElementById('user-info');
+    if (userInfo) {
+        userInfo.innerText = '';
+        userInfo.classList.add('hidden');
+    }
 }
 
 </script>
