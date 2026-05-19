@@ -37,12 +37,16 @@ function verificarMantenimiento_() {
 }
 
 /**
- * Obtiene la URL de la Web App asegurando que sea la versión /exec.
+ * Obtiene la URL de la Web App. 
+ * Prioriza el ajuste APP_WEBAPP_URL si está configurado.
  * @private
  */
 function obtenerUrlApp_() {
-  const url = ScriptApp.getService().getUrl();
-  return url.replace(/\/dev$/, '/exec');
+  const urlConfigurada = obtenerAjuste_('APP_WEBAPP_URL');
+  if (urlConfigurada && urlConfigurada.toString().trim() !== '') {
+    return urlConfigurada.toString().trim();
+  }
+  return ScriptApp.getService().getUrl();
 }
 
 /**

@@ -57,6 +57,7 @@ function inicializarApp() {
         ['DEBUG_USER', ''],
         ['APP_ACCENT_COLOR', '#1d4ed8'],
         ['APP_LOGO_URL', ''],
+        ['APP_WEBAPP_URL', ''],
         ['APP_FOOTER_LOGO_URL', ''],
         ['APP_FOOTER_TEXT', 'Plataforma de comunicación centro-familias.']
       ]
