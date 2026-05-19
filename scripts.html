@@ -174,7 +174,7 @@ function inicializarApp() {
 
                 // LÓGICA DE ENRUTAMIENTO INICIAL
                 if (response.tipo === 'MANTENIMIENTO') {
-                    renderMantenimiento();
+                    renderMantenimiento(response.urlApp);
                 } else if (state.token) {
                     // Si viene por token, ignoramos login de dominio y vamos al login por PIN
                     renderLoginFamiliaToken();
@@ -2579,7 +2579,7 @@ function verDetalleRegistroGlobal(id) {
         .obtenerDetalleRegistroStaff(id);
 }
 
-function renderMantenimiento() {
+function renderMantenimiento(urlApp) {
     document.getElementById('app').innerHTML = `
         <div class="fade-in flex flex-col items-center justify-center min-h-[60vh] text-center px-4 max-w-2xl mx-auto">
             <div class="mb-8 p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
@@ -2594,7 +2594,7 @@ function renderMantenimiento() {
                     El servicio estará pronto disponible de nuevo.
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button onclick="location.reload(true)" 
+                    <button onclick="window.top.location.href='${urlApp || '#'}'" 
                             class="bg-accent text-white px-8 py-3 rounded-lg font-bold hover:shadow-lg transition-all transform hover:-translate-y-0.5 active:translate-y-0">
                         Reintentar ahora
                     </button>

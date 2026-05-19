@@ -195,7 +195,8 @@ function obtenerDatosIniciales() {
         logoUrl,
         footerLogoUrl,
         appFooterLogoLinkUrl,
-        footerText
+        footerText,
+        urlApp: ScriptApp.getService().getUrl()
       };
     }
 
