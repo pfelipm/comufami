@@ -1409,7 +1409,8 @@ function cargarAjustes() {
                 'APP_LOGO_URL',
                 'APP_FOOTER_LOGO_URL',
                 'APP_FOOTER_LOGO_LINK_URL',
-                'APP_FOOTER_TEXT'
+                'APP_FOOTER_TEXT',
+                'HIDE_DETAILS_IN_EMAIL'
             ];
 
             const ajustes = response.data;
@@ -1447,14 +1448,19 @@ function cargarAjustes() {
                             </div>
                         </div>
                     `;
-                } else if (a.parametro === 'MAINTENANCE_MODE') {
+                } else if (a.parametro === 'MAINTENANCE_MODE' || a.parametro === 'HIDE_DETAILS_IN_EMAIL') {
                     const isChecked = a.valor.toString().toUpperCase() === 'TRUE';
+                    // Para el fondo base (cuando NO está checked)
+                    const baseBgClass = a.parametro === 'MAINTENANCE_MODE' ? 'bg-green-500' : 'bg-gray-300';
+                    // Para el fondo cuando SÍ está checked
+                    const checkedBgClass = a.parametro === 'MAINTENANCE_MODE' ? 'peer-checked:bg-orange-500' : 'peer-checked:bg-accent';
+                    
                     inputHtml = `
                         <div class="mt-2">
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" id="adj-${a.parametro}" class="sr-only peer" ${isChecked ? 'checked' : ''}
                                        onchange="document.getElementById('status-${a.parametro}').innerText = this.checked ? 'Activado' : 'Desactivado'">
-                                <div class="w-11 h-6 bg-green-500 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                                <div class="w-11 h-6 ${baseBgClass} peer-focus:outline-none rounded-full peer ${checkedBgClass} peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
                                 <span class="ml-3 text-sm font-medium text-gray-600" id="status-${a.parametro}">${isChecked ? 'Activado' : 'Desactivado'}</span>
                             </label>
                         </div>
@@ -1496,8 +1502,8 @@ function guardarAjusteFront(parametro) {
     const input = document.getElementById(`adj-${parametro}`);
     let valor = input.value;
 
-    // Manejo especial para el interruptor de mantenimiento
-    if (parametro === 'MAINTENANCE_MODE') {
+    // Manejo especial para interruptores booleanos
+    if (parametro === 'MAINTENANCE_MODE' || parametro === 'HIDE_DETAILS_IN_EMAIL') {
         valor = input.checked ? 'TRUE' : 'FALSE';
     }
 

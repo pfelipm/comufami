@@ -135,17 +135,32 @@ function generarPrevisualizacionNotificacion(datos) {
     }
     
     const fechaStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy");
-    const asunto = `Seguimiento Alumnado: ${student.nombre} (${fechaStr})`;
+    const asunto = `Seguimiento: ${student.nombre} (${fechaStr})`;
+
+    const hideDetailsVal = obtenerAjuste_('HIDE_DETAILS_IN_EMAIL');
+    const hideDetails = hideDetailsVal === true || (hideDetailsVal && hideDetailsVal.toString().toLowerCase() === 'true');
     
     // Plantilla HTML refinada con espaciado mínimo para evitar saltos dobles en Quill
-    const quoteStyle = 'margin: 5px 0; padding: 10px 15px; border-left: 4px solid #3b82f6; color: #374151; font-style: italic; background-color: #f9fafb;';
+    const quoteStyle = 'margin: 0 0 16px 0; padding: 10px 15px; border-left: 4px solid #3b82f6; color: #374151; font-style: italic; background-color: #f9fafb;';
     
-    let cuerpoHtml = `<p>Hola,</p>
-<p>Se ha registrado una nueva anotación de seguimiento para <strong>${student.nombre}</strong>:</p>
-<blockquote style="${quoteStyle}">${datos.descripcion.replace(/\n/g, '<br>')}</blockquote>
-<p>Puede consultar los detalles completos y dejar comentarios para el docente pulsando en <a href="[ENLACE_TOKEN]" style="color: #2563eb; font-weight: bold; text-decoration: underline;">este enlace</a>.</p>
+    const textoEnlace = hideDetails 
+      ? 'Puede leer la anotación de seguimiento y dejar comentarios para el docente pulsando en'
+      : 'Puede dejar comentarios para el docente pulsando en';
+
+    if (hideDetails) {
+      cuerpoHtml = `<p>Hola,</p>
+<p>Se ha registrado una nueva anotación de seguimiento de tipo «<strong>${datos.tipo}</strong>» para <strong>${student.nombre}</strong>.</p>
+<p>${textoEnlace} <a href="[ENLACE_TOKEN]" style="color: #2563eb; font-weight: bold; text-decoration: underline;">este enlace</a>.</p>
 <p>Atentamente,</p>
 <p><strong>${docenteNombre}</strong></p>`;
+    } else {
+      cuerpoHtml = `<p>Hola,</p>
+<p>Se ha registrado una nueva anotación de seguimiento de tipo «<strong>${datos.tipo}</strong>» para <strong>${student.nombre}</strong>.</p>
+<blockquote style="${quoteStyle}">${datos.descripcion.replace(/\n/g, '<br>')}</blockquote>
+<p>${textoEnlace} <a href="[ENLACE_TOKEN]" style="color: #2563eb; font-weight: bold; text-decoration: underline;">este enlace</a>.</p>
+<p>Atentamente,</p>
+<p><strong>${docenteNombre}</strong></p>`;
+    }
 
     return { 
       success: true, 

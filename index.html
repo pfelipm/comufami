@@ -17,6 +17,8 @@
         .bg-accent { background-color: var(--accent-color); }
         .text-accent { color: var(--accent-color); }
         .border-accent { border-color: var(--accent-color); }
+        /* Soporte para peer-checked con el color de acento dinámico */
+        .peer:checked ~ .peer-checked\:bg-accent { background-color: var(--accent-color) !important; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans min-h-screen flex flex-col">

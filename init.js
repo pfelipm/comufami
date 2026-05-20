@@ -50,17 +50,18 @@ function inicializarApp() {
     },
     {
       nombre: APP_CONFIG.TABLAS.AJUSTES,
-      cabeceras: ['Parametro', 'Valor'],
+      cabeceras: ['Parametro', 'Valor', 'Funcion'],
       datosIniciales: [
-        ['DEBUG_USER', ''],
-        ['APP_WEBAPP_URL', ''],
-        ['MAINTENANCE_MODE', 'false'],
-        ['APP_NAME', APP_CONFIG.NOMBRE],
-        ['APP_ACCENT_COLOR', '#1d4ed8'],
-        ['APP_LOGO_URL', ''],
-        ['APP_FOOTER_LOGO_URL', ''],
-        ['APP_FOOTER_LOGO_LINK_URL', ''],
-        ['APP_FOOTER_TEXT', 'Plataforma de comunicación centro-familias.']
+        ['DEBUG_USER', '', 'Email de usuario que la aplicación reconocerá como conectado.'],
+        ['APP_WEBAPP_URL', '', 'URL de la webapp pública, como fallback para pruebas en modo dev.'],
+        ['MAINTENANCE_MODE', 'false', 'Si es TRUE (activado) la aplicación muestra un mensaje de mantenimiento, no afecta a admins.'],
+        ['APP_NAME', APP_CONFIG.NOMBRE, 'Nombre de la aplicación, se muestra en diferentes lugares de la IU.'],
+        ['APP_ACCENT_COLOR', '#1d4ed8', 'Color destacado de la IU, se utiliza en botones, encabezado, etc.'],
+        ['APP_LOGO_URL', '', 'URL del logotipo a mostrar en la barra de navegación.'],
+        ['APP_FOOTER_LOGO_URL', '', 'URL del logotipo a mostrar en la sección de pie de página.'],
+        ['APP_FOOTER_LOGO_LINK_URL', '', 'Enlace del logotipo del pie de página.'],
+        ['APP_FOOTER_TEXT', 'Plataforma de comunicación centro-familias.', 'Texto bajo el logotipo, si se omite se muestra un mensaje genérico basado en APP_NAME.'],
+        ['HIDE_DETAILS_IN_EMAIL', 'false', 'Indica si las notificaciones por email incluyen la anotación del docente.']
       ]
     },
     {
@@ -86,7 +87,7 @@ function inicializarApp() {
       hoja.setFrozenRows(1);
 
       if (tabla.datosIniciales) {
-        hoja.getRange(2, 1, tabla.datosIniciales.length, 2).setValues(tabla.datosIniciales);
+        hoja.getRange(2, 1, tabla.datosIniciales.length, tabla.datosIniciales[0].length).setValues(tabla.datosIniciales);
       }
     } else if (tabla.nombre === APP_CONFIG.TABLAS.USUARIOS) {
       // Si la hoja Usuarios ya existe, asegurar que tiene la columna Grupos (columna 5)

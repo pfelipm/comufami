@@ -57,7 +57,9 @@ function doGet(e) {
   const accentColor = obtenerAjuste_('APP_ACCENT_COLOR') || '#1d4ed8'; // blue-700 default
   const logoUrl = obtenerAjuste_('APP_LOGO_URL') || '';
   const footerText = obtenerAjuste_('APP_FOOTER_TEXT') || '';
-  
+  const hideDetailsInEmailVal = obtenerAjuste_('HIDE_DETAILS_IN_EMAIL');
+  const hideDetailsInEmail = hideDetailsInEmailVal === true || (hideDetailsInEmailVal && hideDetailsInEmailVal.toString().toLowerCase() === 'true');
+
   const template = HtmlService.createTemplateFromFile('index');
   template.appName = appName;
   template.accentColor = accentColor;
@@ -65,8 +67,8 @@ function doGet(e) {
   template.footerLogoUrl = obtenerAjuste_('APP_FOOTER_LOGO_URL') || '';
   template.appFooterLogoLinkUrl = obtenerAjuste_('APP_FOOTER_LOGO_LINK_URL') || '';
   template.footerText = footerText;
-  template.token = e.parameter.token || null;
-  
+  template.hideDetailsInEmail = hideDetailsInEmail;
+  template.token = e.parameter.token || null;  
   return template
     .evaluate()
     .setTitle(appName)
@@ -197,6 +199,8 @@ function obtenerDatosIniciales() {
     const footerLogoUrl = obtenerAjuste_('APP_FOOTER_LOGO_URL') || '';
     const appFooterLogoLinkUrl = obtenerAjuste_('APP_FOOTER_LOGO_LINK_URL') || '';
     const footerText = obtenerAjuste_('APP_FOOTER_TEXT') || '';
+    const hideDetailsInEmailVal = obtenerAjuste_('HIDE_DETAILS_IN_EMAIL');
+    const hideDetailsInEmail = hideDetailsInEmailVal === true || (hideDetailsInEmailVal && hideDetailsInEmailVal.toString().toLowerCase() === 'true');
 
     // Bloqueo por mantenimiento (solo si no es admin real)
     if (verificarMantenimiento_()) {
@@ -209,6 +213,7 @@ function obtenerDatosIniciales() {
         footerLogoUrl,
         appFooterLogoLinkUrl,
         footerText,
+        hideDetailsInEmail,
         urlApp: obtenerUrlApp_()
       };
     }
@@ -240,7 +245,8 @@ function obtenerDatosIniciales() {
         logoUrl,
         footerLogoUrl,
         appFooterLogoLinkUrl,
-        footerText
+        footerText,
+        hideDetailsInEmail
       };
     }
 
@@ -260,7 +266,8 @@ function obtenerDatosIniciales() {
       logoUrl,
       footerLogoUrl,
       appFooterLogoLinkUrl,
-      footerText
+      footerText,
+      hideDetailsInEmail
     };
   } catch (e) {
     console.error('Error en obtenerDatosIniciales:', e);
