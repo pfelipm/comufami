@@ -71,7 +71,7 @@ function showAlert(title, message, type = 'info') {
     } else if (type === 'success') {
         iconContainer.classList.add('bg-green-100', 'text-green-600');
         iconEl.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>';
-        btnOk.classList.add('bg-green-600', 'hover:bg-green-700');
+        btnOk.classList.add('bg-accent', 'hover:brightness-110');
     } else {
         iconContainer.classList.add('bg-accent', 'bg-opacity-10', 'text-accent');
         iconEl.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
@@ -349,7 +349,8 @@ function renderCrearRegistro(container) {
 
                 <div class="flex justify-between items-center">
                     <button onclick="volverAPaso1()" class="px-4 py-2 border border-gray-300 text-gray-600 rounded-md hover:bg-gray-50 transition-colors font-medium text-sm">Volver a editar anotación</button>
-                    <button onclick="enviarRegistroFinal()" class="bg-green-600 text-white px-8 py-3 rounded-md hover:bg-green-700 transition-colors font-bold shadow-md">Confirmar y enviar</button>
+                    <button onclick="enviarRegistroFinal()" class="bg-accent text-white px-8 py-3 rounded-md hover:brightness-110 transition-colors font-bold shadow-md">Confirmar y enviar</button>
+
                 </div>
             </div>
 
@@ -661,8 +662,9 @@ function renderEstudiantes(container) {
                     
                     <div class="flex justify-end gap-3 mt-6">
                         <button type="button" onclick="cerrarModalEstudiante()" class="bg-gray-200 px-4 py-2 rounded-md">Cancelar</button>
-                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-md">Guardar</button>
+                        <button type="submit" class="bg-accent text-white px-4 py-2 rounded-md hover:brightness-110">Guardar</button>
                     </div>
+
                 </form>
             </div>
         </div>
@@ -1424,24 +1426,25 @@ function cargarAjustes() {
             ajustes.forEach(a => {
                 let inputHtml = '';
                 if (a.parametro === 'APP_ACCENT_COLOR') {
+                    const colores = ['#0C1A78', '#1d4ed8', '#7c3aed', '#db2777', '#dc2626', '#ea580c', '#f59e0b', '#059669', '#0891b2', '#475569'];
+                    let swatches = '';
+                    colores.forEach(c => {
+                        swatches += `<div onclick="document.getElementById('adj-${a.parametro}').value='${c}'; document.getElementById('hex-${a.parametro}').innerText='${c}';" 
+                                          class="w-5 h-5 rounded-sm cursor-pointer hover:scale-110 transition-transform shadow-sm border border-white" 
+                                          style="background-color: ${c}" title="${c}"></div>`;
+                    });
+
                     inputHtml = `
-                        <div class="flex items-center gap-3 mt-1">
-                            <input type="color" id="adj-${a.parametro}" value="${a.valor}" list="presets-colores"
-                                   oninput="document.getElementById('hex-${a.parametro}').innerText = this.value"
-                                   class="h-10 w-48 border border-gray-200 rounded-md cursor-pointer bg-transparent transition-all">
-                            <span id="hex-${a.parametro}" class="text-xs font-mono text-gray-500 font-bold">${a.valor}</span>
-                            <datalist id="presets-colores">
-                                <option value="#0C1A78">Corporativo Centro</option>
-                                <option value="#1d4ed8">Azul Estándar</option>
-                                <option value="#7c3aed">Violeta</option>
-                                <option value="#db2777">Rosa</option>
-                                <option value="#dc2626">Rojo</option>
-                                <option value="#ea580c">Naranja</option>
-                                <option value="#f59e0b">Ámbar</option>
-                                <option value="#059669">Esmeralda</option>
-                                <option value="#0891b2">Cian</option>
-                                <option value="#475569">Pizarra</option>
-                            </datalist>
+                        <div class="flex items-center gap-4 mt-1">
+                            <div class="flex items-center gap-2">
+                                <input type="color" id="adj-${a.parametro}" value="${a.valor}" 
+                                       oninput="document.getElementById('hex-${a.parametro}').innerText = this.value"
+                                       class="h-10 w-10 border border-gray-200 rounded-lg cursor-pointer bg-transparent shadow-sm hover:ring-2 hover:ring-accent transition-all">
+                                <span id="hex-${a.parametro}" class="text-[10px] font-mono text-gray-400 font-bold uppercase tracking-wider w-16">${a.valor}</span>
+                            </div>
+                            <div class="grid grid-cols-5 gap-1 bg-gray-100 p-1 rounded border border-gray-200">
+                                ${swatches}
+                            </div>
                         </div>
                     `;
                 } else if (a.parametro === 'MAINTENANCE_MODE') {
