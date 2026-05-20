@@ -349,7 +349,8 @@ function listarAjustes() {
       if (datos[i][0]) {
         ajustes.push({
           parametro: datos[i][0].toString(),
-          valor: datos[i][1].toString()
+          valor: datos[i][1].toString(),
+          descripcion: datos[i][2] ? datos[i][2].toString() : ''
         });
       }
     }
