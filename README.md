@@ -19,7 +19,7 @@ El objetivo principal de ComuFami es centralizar el seguimiento del alumnado en 
     -   **Administradores:** control total sobre la configuración, usuarios y grupos.
     -   **Supervisores:** visualización de registros de todos los grupos o de los asignados.
     -   **Docentes:** registro y gestión de sus grupos asignados.
-    -   **Familias:** acceso restringido a la información exclusiva de sus hijos/as mediante validación de email y PIN. Soporte nativo para **progenitores independientes**, con accesos, comentarios y confirmaciones de lectura totalmente separados para garantizar la privacidad y autonomía de cada parte.
+    -   **Familias:** acceso restringido a la información exclusiva de sus hijos/as mediante validación de email y PIN. Incluye un **dashboard personalizado** para visualizar la evolución y el historial de registros de sus hijos/as, además de soporte nativo para **progenitores independientes**, con accesos, comentarios y confirmaciones de lectura totalmente separados para garantizar la privacidad y autonomía de cada parte.
 -   **Personalización visual:** ajuste de colores corporativos, logotipos y textos de pie de página desde un panel de ajustes integrado.
 -   **Modo mantenimiento:** capacidad de pausar el acceso a la webapp para realizar ajustes técnicos.
 -   **Auditoría:** registro automático de todas las acciones críticas realizadas en la plataforma para garantizar la integridad de los datos.
