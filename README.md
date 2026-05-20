@@ -2,6 +2,8 @@
 
 **ComuFami** es una solución integral basada en Google Workspace diseñada para facilitar y agilizar la comunicación entre los centros educativos y las familias. Permite a los docentes registrar incidencias, observaciones y seguimientos de los estudiantes, asegurando que los progenitores reciban la información de manera directa y puedan interactuar con ella.
 
+![ComuFami Overview](assets/comufami-overview.png)
+
 ---
 
 ## 🎯 Objetivo del proyecto
