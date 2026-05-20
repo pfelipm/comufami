@@ -554,9 +554,10 @@ function renderEstudiantes(container) {
                     <h1 class="text-2xl font-bold text-gray-800">Gestión de estudiantes</h1>
                 </div>
                 ${state.user.rol !== 'Supervisor' ? `
-                <button id="btn-nuevo-estudiante" onclick="mostrarFormularioEstudiante()" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center gap-2">
+                <button id="btn-nuevo-estudiante" onclick="mostrarFormularioEstudiante()" class="bg-accent text-white px-4 py-2 rounded-md hover:brightness-110 transition-colors flex items-center gap-2">
                     <span>Nuevo estudiante</span>
                 </button>` : ''}
+
             </div>
 
             <!-- Panel de filtros -->
@@ -1436,8 +1437,10 @@ function cargarAjustes() {
                                 <option value="#db2777">Rosa</option>
                                 <option value="#dc2626">Rojo</option>
                                 <option value="#ea580c">Naranja</option>
+                                <option value="#f59e0b">Ámbar</option>
                                 <option value="#059669">Esmeralda</option>
                                 <option value="#0891b2">Cian</option>
+                                <option value="#475569">Pizarra</option>
                             </datalist>
                         </div>
                     `;
@@ -1448,7 +1451,7 @@ function cargarAjustes() {
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" id="adj-${a.parametro}" class="sr-only peer" ${isChecked ? 'checked' : ''}
                                        onchange="document.getElementById('status-${a.parametro}').innerText = this.checked ? 'Activado' : 'Desactivado'">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
                                 <span class="ml-3 text-sm font-medium text-gray-600" id="status-${a.parametro}">${isChecked ? 'Activado' : 'Desactivado'}</span>
                             </label>
                         </div>
