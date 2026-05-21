@@ -1,4 +1,4 @@
-# 🏫 ComuFami: plataforma de comunicación centro-familias
+# ComuFami
 
 **ComuFami** es una solución integral basada en Google Workspace diseñada para facilitar y agilizar la comunicación entre los centros educativos y las familias. Permite a los docentes registrar incidencias, observaciones y seguimientos de los estudiantes, asegurando que los progenitores reciban la información de manera directa y puedan interactuar con ella.
 
@@ -15,6 +15,8 @@ El objetivo principal de ComuFami es centralizar el seguimiento del alumnado en 
 -   **Gestión de seguimiento:** registro de incidencias y observaciones con editor de texto enriquecido (Quill).
     
     ![Registrar Anotación](assets/registar-anotación-descripción.png)
+    <br>
+    ![Previsualización Anotación](assets/registar-anotación-previsualización.png)
     
 -   **Confirmación de lectura:** seguimiento en tiempo real de cuándo cada progenitor ha visualizado una nota.
 -   **Interacción bidireccional:** las familias pueden dejar comentarios en los registros recibidos.
@@ -25,9 +27,13 @@ El objetivo principal de ComuFami es centralizar el seguimiento del alumnado en 
 -   **Privacidad en notificaciones:** configuración opcional para ocultar el contenido de las anotaciones en los correos electrónicos, incentivando el acceso seguro a la plataforma para garantizar la trazabilidad.
 -   **Gestión multirrol:** 
     -   **Administradores:** control total sobre la configuración, usuarios y grupos.
+    
         ![Vista Admin](assets/vista-admin.png)
     -   **Supervisores:** visualización de registros de todos los grupos o de los asignados.
+    
+        ![Vista Supervisor](assets/vista-supervisor.png)
     -   **Docentes:** registro y gestión de sus grupos asignados.
+    
         ![Vista Docente](assets/vista-docente.png)
     -   **Familias:** acceso restringido a la información exclusiva de sus hijos/as mediante validación de email y PIN. *Nota: Si la familia accede a través del enlace único proporcionado en el correo electrónico de notificación, bastará con introducir el PIN personal para visualizar el registro.* Incluye un **dashboard personalizado** para visualizar la evolución y el historial de registros de sus hijos/as, además de soporte nativo para **progenitores independientes**, con accesos, comentarios y confirmaciones de lectura totalmente separados para garantizar la privacidad y autonomía de cada parte.
     
