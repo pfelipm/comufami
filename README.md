@@ -20,7 +20,7 @@ El objetivo principal de ComuFami es centralizar el seguimiento del alumnado en 
 -   **Interacción bidireccional:** las familias pueden dejar comentarios en los registros recibidos.
 -   **Panel de control (dashboard):** visualización de estadísticas y métricas mediante gráficos interactivos (ApexCharts) para supervisores y administradores.
     
-    ![Dashboard Centro](assets/dashboard-centro-gráfica-columnas.png)
+    ![Dashboard Centro](assets/dashboard-centro-gráficas.gif)
     
 -   **Privacidad en notificaciones:** configuración opcional para ocultar el contenido de las anotaciones en los correos electrónicos, incentivando el acceso seguro a la plataforma para garantizar la trazabilidad.
 -   **Gestión multirrol:** 
