@@ -29,7 +29,10 @@ El objetivo principal de ComuFami es centralizar el seguimiento del alumnado en 
     -   **Supervisores:** visualización de registros de todos los grupos o de los asignados.
     -   **Docentes:** registro y gestión de sus grupos asignados.
         ![Vista Docente](assets/vista-docente.png)
-    -   **Familias:** acceso restringido a la información exclusiva de sus hijos/as mediante validación de email y PIN. Incluye un **dashboard personalizado** para visualizar la evolución y el historial de registros de sus hijos/as, además de soporte nativo para **progenitores independientes**, con accesos, comentarios y confirmaciones de lectura totalmente separados para garantizar la privacidad y autonomía de cada parte.
+    -   **Familias:** acceso restringido a la información exclusiva de sus hijos/as mediante validación de email y PIN. *Nota: Si la familia accede a través del enlace único proporcionado en el correo electrónico de notificación, bastará con introducir el PIN personal para visualizar el registro.* Incluye un **dashboard personalizado** para visualizar la evolución y el historial de registros de sus hijos/as, además de soporte nativo para **progenitores independientes**, con accesos, comentarios y confirmaciones de lectura totalmente separados para garantizar la privacidad y autonomía de cada parte.
+    
+        ![Login Familias](assets/login-portal-familias.png)
+        <br>
         ![Portal Familias](assets/portal-familias-historial.png)
 -   **Personalización visual:** ajuste de colores corporativos, logotipos y textos de pie de página desde un panel de ajustes integrado.
     ![Panel Ajustes](assets/panel-ajustes.png)
