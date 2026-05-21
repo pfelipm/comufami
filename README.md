@@ -65,6 +65,8 @@ La hoja de cálculo que actúa como motor de datos contiene las siguientes tabla
 
 ## ⚙️ Configuración e instalación
 
+> 🚧 **Nota:** La plantilla de Google Sheets necesaria para la instalación estará disponible públicamente muy pronto.
+
 La instalación de ComuFami se realiza a partir de una plantilla de Google Sheets que ya contiene la estructura de tablas y el código de la aplicación:
 
 1.  **Crear una copia de la plantilla:** obtén acceso a la hoja de cálculo de referencia y crea una copia en tu Google Drive.
