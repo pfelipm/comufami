@@ -42,7 +42,7 @@ El objetivo principal de ComuFami es centralizar el seguimiento del alumnado en 
         ![Portal Familias](assets/portal-familias-historial.png)
         <br>
         ![Detalles Registro Familia](assets/portal-familias-detalles.png)
--   **Personalización visual:** ajuste de colores corporativos, logotipos y textos de pie de página desde un panel de ajustes integrado.
+-   **Configuración del sistema:** panel de ajustes integrado para gestionar la personalización visual (colores, logotipos), parámetros de privacidad (nivel de detalle en correos) y opciones técnicas para administradores (impersonación de usuarios, URLs de despliegue).
     
     ![Panel Ajustes](assets/panel-ajustes.png)
 -   **Modo mantenimiento:** capacidad de pausar el acceso a la webapp para realizar ajustes técnicos.
