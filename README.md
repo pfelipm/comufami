@@ -53,6 +53,8 @@ ComuFami está construido utilizando tecnologías modernas sobre la infraestruct
 
 La hoja de cálculo que actúa como motor de datos contiene las siguientes tablas:
 
+![Backend Sheets](assets/sheets-backend.gif)
+
 -   **Usuarios:** datos del personal del centro (email, nombre, rol, estado, grupos).
 -   **Estudiantes:** listado de alumnos, grupos y datos de contacto de las familias.
 -   **Registros:** almacén de todas las anotaciones de seguimiento, incluyendo fechas de vista y comentarios.
