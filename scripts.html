@@ -2304,8 +2304,8 @@ function renderizarOActualizarGrafico(registros) {
     } else {
         state.dashboardChart.updateOptions({
             chart: { type: state.dashboardChartType, stacked: state.dashboardChartType === 'bar' },
-            stroke: { width: state.dashboardChartType === 'line' ? 3 : 0 },
-            markers: { size: state.dashboardChartType === 'line' ? 4 : 0 }
+            stroke: { show: state.dashboardChartType === 'line', width: state.dashboardChartType === 'line' ? 3 : 0 },
+            markers: { size: state.dashboardChartType === 'line' ? 4 : 0, strokeWidth: state.dashboardChartType === 'line' ? 2 : 0, hover: { size: state.dashboardChartType === 'line' ? 6 : 0 } }
         }, false, true); // redrawPaths = true
         state.dashboardChart.updateSeries(series);
     }
@@ -2653,8 +2653,8 @@ function renderizarOActualizarGraficoGlobal(registros) {
     } else {
         state.dashboardChartGlobal.updateOptions({
             chart: { type: state.dashboardChartType, stacked: state.dashboardChartType === 'bar' },
-            stroke: { width: state.dashboardChartType === 'line' ? 3 : 0 },
-            markers: { size: state.dashboardChartType === 'line' ? 4 : 0 }
+            stroke: { show: state.dashboardChartType === 'line', width: state.dashboardChartType === 'line' ? 3 : 0 },
+            markers: { size: state.dashboardChartType === 'line' ? 4 : 0, strokeWidth: state.dashboardChartType === 'line' ? 2 : 0, hover: { size: state.dashboardChartType === 'line' ? 6 : 0 } }
         }, false, true);
         state.dashboardChartGlobal.updateSeries(series);
     }
