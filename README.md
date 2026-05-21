@@ -13,17 +13,28 @@ El objetivo principal de ComuFami es centralizar el seguimiento del alumnado en 
 ## 🚀 Funcionalidades principales
 
 -   **Gestión de seguimiento:** registro de incidencias y observaciones con editor de texto enriquecido (Quill).
+    
+    ![Registrar Anotación](assets/registar-anotación-descripción.png)
+    
 -   **Confirmación de lectura:** seguimiento en tiempo real de cuándo cada progenitor ha visualizado una nota.
 -   **Interacción bidireccional:** las familias pueden dejar comentarios en los registros recibidos.
 -   **Panel de control (dashboard):** visualización de estadísticas y métricas mediante gráficos interactivos (ApexCharts) para supervisores y administradores.
+    
+    ![Dashboard Centro](assets/dashboard-centro-gráfica-columnas.png)
+    
 -   **Privacidad en notificaciones:** configuración opcional para ocultar el contenido de las anotaciones en los correos electrónicos, incentivando el acceso seguro a la plataforma para garantizar la trazabilidad.
 -   **Gestión multirrol:** 
     -   **Administradores:** control total sobre la configuración, usuarios y grupos.
+        ![Vista Admin](assets/vista-admin.png)
     -   **Supervisores:** visualización de registros de todos los grupos o de los asignados.
     -   **Docentes:** registro y gestión de sus grupos asignados.
+        ![Vista Docente](assets/vista-docente.png)
     -   **Familias:** acceso restringido a la información exclusiva de sus hijos/as mediante validación de email y PIN. Incluye un **dashboard personalizado** para visualizar la evolución y el historial de registros de sus hijos/as, además de soporte nativo para **progenitores independientes**, con accesos, comentarios y confirmaciones de lectura totalmente separados para garantizar la privacidad y autonomía de cada parte.
+        ![Portal Familias](assets/portal-familias-historial.png)
 -   **Personalización visual:** ajuste de colores corporativos, logotipos y textos de pie de página desde un panel de ajustes integrado.
+    ![Panel Ajustes](assets/panel-ajustes.png)
 -   **Modo mantenimiento:** capacidad de pausar el acceso a la webapp para realizar ajustes técnicos.
+    ![Modo Mantenimiento](assets/modo-mantenimiento.png)
 -   **Auditoría:** registro automático de todas las acciones críticas realizadas en la plataforma para garantizar la integridad de los datos.
 
 ## 🛠️ Arquitectura y tecnologías
