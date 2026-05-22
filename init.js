@@ -61,7 +61,7 @@ function inicializarApp() {
         ['APP_FOOTER_LOGO_URL', '', 'URL del logotipo a mostrar en la sección de pie de página.'],
         ['APP_FOOTER_LOGO_LINK_URL', '', 'Enlace del logotipo del pie de página.'],
         ['APP_FOOTER_TEXT', 'Plataforma de comunicación centro-familias.', 'Texto bajo el logotipo, si se omite se muestra un mensaje genérico basado en APP_NAME.'],
-        ['HIDE_DETAILS_IN_EMAIL', 'false', 'Indica si las notificaciones por email incluyen la anotación del docente.']
+        ['HIDE_DETAILS_IN_EMAIL', 'true', 'Indica si las notificaciones por email incluyen la anotación del docente.']
       ]
     },
     {
