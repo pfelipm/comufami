@@ -11,11 +11,23 @@
 ---
 
 ## 🎯 Objetivo del proyecto
-
 El objetivo principal de ComuFami es centralizar el seguimiento del alumnado en una plataforma sencilla y accesible, eliminando las barreras de comunicación y garantizando la trazabilidad de la información compartida con las familias mediante un sistema de notificaciones y confirmaciones de lectura.
 
 ![ComuFami Overview](assets/comufami-overview.png)
 
+---
+
+### ⚠️ Consideraciones de uso y escalabilidad
+
+ComuFami se ha diseñado aprovechando la infraestructura de **Google Workspace (Google Sheets y Apps Script)**. Esta elección tecnológica permite ofrecer un entorno *serverless* y sin costes de operación, inmediatamente disponible para cualquier centro educativo que ya utilice el ecosistema de Google.
+
+Sin embargo, debido a las características de estas herramientas, es importante tener en cuenta que:
+
+*   **No es una herramienta de gestión integral:** Para la gestión administrativa y académica de un centro completo (especialmente centros muy grandes), existen soluciones comerciales más robustas y escalables.
+*   **Contexto idóneo:** ComuFami es una solución excelente para ser utilizada en ámbitos más acotados, como la gestión de un **grupo-clase**, un **curso**, un **departamento** o una **etapa educativa específica**.
+*   **Limitaciones técnicas:** Al utilizar Google Sheets como motor de datos, el rendimiento puede verse afectado ante un volumen masivo de registros o una concurrencia de usuarios simultáneos extremadamente alta.
+
+---
 ## 🚀 Funcionalidades principales
 
 -   **Gestión de seguimiento:** registro de incidencias y observaciones con editor de texto enriquecido (Quill).
