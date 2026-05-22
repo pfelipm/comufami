@@ -2472,6 +2472,16 @@ function cargarRegistrosGlobal() {
                         if (g) selectGr.innerHTML += `<option value="${g}">${g}</option>`;
                     });
                 }
+                
+                // Poblar filtro de autores
+                const autores = [...new Set(state.allRecords.map(r => r.docente_nombre || r.docente_email))].sort();
+                const selectAu = document.getElementById('g-filtro-autor');
+                if (selectAu) {
+                    selectAu.innerHTML = '<option value="">Todos los autores</option>';
+                    autores.forEach(a => {
+                        if (a) selectAu.innerHTML += `<option value="${a}">${a}</option>`;
+                    });
+                }
 
                 filtrarYMostrarRegistrosGlobal();
             } else {
@@ -2488,6 +2498,7 @@ function cargarRegistrosGlobal() {
 function filtrarYMostrarRegistrosGlobal() {
     const texto = document.getElementById('g-filtro-texto').value.toLowerCase();
     const grupo = document.getElementById('g-filtro-grupo').value;
+    const autor = document.getElementById('g-filtro-autor').value;
     const tipo = document.getElementById('g-filtro-tipo').value;
     
     let filtrados = state.allRecords.filter(r => {
@@ -2495,8 +2506,9 @@ function filtrarYMostrarRegistrosGlobal() {
                              r.estudiante_nombre.toLowerCase().includes(texto) ||
                              r.id_estudiante.toString().toLowerCase().includes(texto);
         const matchesGrupo = !grupo || r.grupo === grupo;
+        const matchesAutor = !autor || r.docente_nombre === autor || r.docente_email === autor;
         const matchesTipo = !tipo || r.tipo === tipo;
-        return matchesTexto && matchesGrupo && matchesTipo;
+        return matchesTexto && matchesGrupo && matchesAutor && matchesTipo;
     });
 
     // Ordenar

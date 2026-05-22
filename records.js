@@ -461,6 +461,17 @@ function obtenerDetalleRegistroStaff(idRegistro) {
 
     if (!registro) throw new Error('Registro no encontrado.');
 
+    // Obtener el nombre del docente
+    const sheetUsuarios = ss.getSheetByName(APP_CONFIG.TABLAS.USUARIOS);
+    const datosUsuarios = sheetUsuarios.getDataRange().getValues();
+    registro.docente_nombre = registro.docente_email; // fallback
+    for (let i = 1; i < datosUsuarios.length; i++) {
+      if (datosUsuarios[i][0].toString().toLowerCase().trim() === registro.docente_email.toLowerCase().trim()) {
+        registro.docente_nombre = datosUsuarios[i][1].toString();
+        break;
+      }
+    }
+
     // Obtener datos del estudiante
     const sheetEstudiantes = ss.getSheetByName(APP_CONFIG.TABLAS.ESTUDIANTES);
     const datosEstudiantes = sheetEstudiantes.getDataRange().getValues();
