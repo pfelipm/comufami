@@ -2387,14 +2387,20 @@ function renderDashboardGlobal(container) {
                 </div>
                 <div class="w-full sm:w-40">
                     <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Grupo</label>
-                    <select id="g-filtro-grupo" onchange="filtrarYMostrarRegistrosGlobal()" 
+                    <select id="g-filtro-grupo" onchange="filtrarYMostrarRegistrosGlobal()"
                             class="w-full border border-gray-200 rounded-md p-2 text-sm focus:border-accent outline-none">
                         <option value="">Todos los grupos</option>
                     </select>
                 </div>
                 <div class="w-full sm:w-40">
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Tipo</label>
-                    <select id="g-filtro-tipo" onchange="filtrarYMostrarRegistrosGlobal()" 
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Autor</label>
+                    <select id="g-filtro-autor" onchange="filtrarYMostrarRegistrosGlobal()" 
+                            class="w-full border border-gray-200 rounded-md p-2 text-sm focus:border-accent outline-none">
+                        <option value="">Todos los autores</option>
+                    </select>
+                </div>
+                <div class="w-full sm:w-40">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Tipo</label>                    <select id="g-filtro-tipo" onchange="filtrarYMostrarRegistrosGlobal()" 
                             class="w-full border border-gray-200 rounded-md p-2 text-sm focus:border-accent outline-none">
                         <option value="">Todos los tipos</option>
                         <option value="General">General</option>
