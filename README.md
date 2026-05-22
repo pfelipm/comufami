@@ -15,6 +15,14 @@ El objetivo principal de ComuFami es centralizar el seguimiento del alumnado en 
 
 ![ComuFami Overview](assets/comufami-overview-marco.png)
 
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=hmGZZiASw0M">
+    <img src="https://img.youtube.com/vi/hmGZZiASw0M/0.jpg" alt="Video explicativo de ComuFami">
+  </a>
+  <br>
+  <em>🎬 Haz clic en la imagen para ver el video explicativo del proyecto</em>
+</p>
+
 ---
 
 ### ⚠️ Consideraciones de uso y escalabilidad
