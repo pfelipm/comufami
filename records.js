@@ -23,6 +23,14 @@ function listarRegistros() {
       };
     }
 
+    // 2. Cargar mapa de docentes (Email -> Nombre)
+    const userSheet = ss.getSheetByName(APP_CONFIG.TABLAS.USUARIOS);
+    const userData = userSheet.getDataRange().getValues();
+    const userMap = {};
+    for (let i = 1; i < userData.length; i++) {
+      userMap[userData[i][0].toLowerCase()] = userData[i][1].toString();
+    }
+
     const sheet = ss.getSheetByName(APP_CONFIG.TABLAS.REGISTROS);
     const datos = sheet.getDataRange().getValues();
     const registros = [];
@@ -32,6 +40,7 @@ function listarRegistros() {
       const studentInfo = studentMap[idEst] || { nombre: 'Estudiante desconocido', grupo: '' };
       
       if (verificarAccesoGrupo_(user, studentInfo.grupo)) {
+        const docenteEmail = datos[i][5] ? datos[i][5].toString().toLowerCase() : '';
         registros.push({
           id: datos[i][0],
           id_estudiante: datos[i][1],
@@ -40,7 +49,8 @@ function listarRegistros() {
           fecha: datos[i][2] instanceof Date ? datos[i][2].toISOString() : datos[i][2],
           tipo: datos[i][3],
           descripcion: datos[i][4],
-          docente_email: datos[i][5],
+          docente_email: docenteEmail,
+          docente_nombre: userMap[docenteEmail] || docenteEmail || 'Docente desconocido',
           vista_p1: datos[i][6] instanceof Date ? datos[i][6].toISOString() : datos[i][6],
           vista_p2: datos[i][7] instanceof Date ? datos[i][7].toISOString() : datos[i][7],
           comentario_p1: datos[i][8],

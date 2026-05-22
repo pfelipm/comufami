@@ -2482,7 +2482,7 @@ function cargarRegistrosGlobal() {
                 }
                 
                 // Poblar filtro de autores
-                const autores = [...new Set(state.allRecords.map(r => r.docente_nombre || 'Sin nombre'))].sort();
+                const autores = [...new Set(state.allRecords.map(r => r.docente_nombre))].sort();
                 const selectAu = document.getElementById('g-filtro-autor');
                 if (selectAu) {
                     selectAu.innerHTML = '<option value="">Todos los autores</option>';
