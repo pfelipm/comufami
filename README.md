@@ -1,8 +1,12 @@
-# ComuFami
+![ComuFami](assets/banner.png)
+
+<p align="center">
+ <a href="https://developers.google.com/apps-script"><img src="https://img.shields.io/static/v1?label=Creado+con&message=Google+Apps+Script&color=blue&logo=GAS" alt="Creado con - Google Apps Script"></a>
+ <img src="https://img.shields.io/badge/Versi%C3%B3n-1.0-brightgreen" alt="Versión 1.0">
+ <a href="LICENSE"><img src="https://img.shields.io/badge/Licencia-GNU_GPL_v3-blue" alt="Licencia GPL v3"></a>
+</p>
 
 **ComuFami** es una solución integral basada en Google Workspace diseñada para facilitar y agilizar la comunicación entre los centros educativos y las familias. Permite a los docentes registrar incidencias, observaciones y seguimientos de los estudiantes, asegurando que los progenitores reciban la información de manera directa y puedan interactuar con ella.
-
-![ComuFami Overview](assets/comufami-overview-marco.png)
 
 ---
 
