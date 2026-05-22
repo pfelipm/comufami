@@ -1891,7 +1891,7 @@ function renderDashboardFamiliaGeneral(container) {
                     </div>
                 </div>
                 <div class="w-full sm:w-48">
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Alumno</label>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Estudiante</label>
                     <select id="filtro-alumno" onchange="filtrarYMostrarRegistrosFamilia()" 
                             class="w-full border border-gray-200 rounded-md p-2 text-sm focus:border-accent outline-none">
                         <option value="">Todos</option>
@@ -2107,6 +2107,7 @@ function mostrarModalDetalle(data) {
         <div class="p-8">
             <div class="flex items-center gap-2 mb-6">
                 <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${badgeColor}">${reg.tipo}</span>
+                <span class="text-xs text-gray-500 font-medium ml-2">Registrado por: <strong>${reg.docente_nombre || 'Docente'}</strong></span>
             </div>
 
             <div class="bg-blue-50 border-l-4 border-accent p-6 rounded-r-lg italic text-gray-700 mb-2 leading-relaxed">

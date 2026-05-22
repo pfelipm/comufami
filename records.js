@@ -328,6 +328,17 @@ function validarTokenYPin(token, pin) {
 
     if (!estudiante) throw new Error('Estudiante no encontrado.');
 
+    // Obtener el nombre del docente
+    const sheetUsuarios = ss.getSheetByName(APP_CONFIG.TABLAS.USUARIOS);
+    const datosUsuarios = sheetUsuarios.getDataRange().getValues();
+    registro.docente_nombre = registro.docente_email; // fallback
+    for (let i = 1; i < datosUsuarios.length; i++) {
+      if (datosUsuarios[i][0].toString().toLowerCase().trim() === registro.docente_email.toLowerCase().trim()) {
+        registro.docente_nombre = datosUsuarios[i][1].toString();
+        break;
+      }
+    }
+
     // Validar el PIN contra la tabla Familias para los emails vinculados
     const sheetFamilias = ss.getSheetByName(APP_CONFIG.TABLAS.FAMILIAS);
     const datosFamilias = sheetFamilias.getDataRange().getValues();
@@ -502,8 +513,16 @@ function listarRegistrosFamilia(email, pin) {
 
     const sheetRegistros = ss.getSheetByName(APP_CONFIG.TABLAS.REGISTROS);
     const datos = sheetRegistros.getDataRange().getValues();
-    const registros = [];
+    
+    // Crear mapa de docentes para obtener sus nombres
+    const sheetUsuarios = ss.getSheetByName(APP_CONFIG.TABLAS.USUARIOS);
+    const datosUsuarios = sheetUsuarios.getDataRange().getValues();
+    const usuariosMap = {};
+    for (let i = 1; i < datosUsuarios.length; i++) {
+      usuariosMap[datosUsuarios[i][0].toString().toLowerCase().trim()] = datosUsuarios[i][1].toString();
+    }
 
+    const registros = [];
     const emailNorm = email.toLowerCase().trim();
 
     for (let i = 1; i < datos.length; i++) {
@@ -523,6 +542,8 @@ function listarRegistrosFamilia(email, pin) {
         }
 
         const comentarioPropio = parentIndex === 1 ? datos[i][8] : datos[i][9];
+        const docenteEmail = datos[i][5].toString().toLowerCase().trim();
+        const docenteNombre = usuariosMap[docenteEmail] || datos[i][5];
         
         registros.push({
           token: datos[i][12],
@@ -531,7 +552,8 @@ function listarRegistrosFamilia(email, pin) {
           fecha: datos[i][2] instanceof Date ? datos[i][2].toISOString() : datos[i][2],
           tipo: datos[i][3],
           descripcion: datos[i][4],
-          tiene_comentario: !!comentarioPropio
+          tiene_comentario: !!comentarioPropio,
+          docente_nombre: docenteNombre
         });
       }
     }
