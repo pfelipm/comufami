@@ -13,7 +13,7 @@
 ## 🎯 Objetivo del proyecto
 El objetivo principal de ComuFami es centralizar el seguimiento del alumnado en una plataforma sencilla y accesible, eliminando las barreras de comunicación y garantizando la trazabilidad de la información compartida con las familias mediante un sistema de notificaciones y confirmaciones de lectura.
 
-![ComuFami Overview](assets/comufami-overview.png)
+![ComuFami Overview](assets/comufami-overview-marco.png)
 
 ---
 
