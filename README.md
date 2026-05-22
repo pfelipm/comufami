@@ -39,6 +39,8 @@ El objetivo principal de ComuFami es centralizar el seguimiento del alumnado en 
     
         ![Login Familias](assets/login-portal-familias.png)
         <br>
+        ![Dashboard Familias](assets/dashboard-familias-gráfica-columnas.png)
+        <br>
         ![Portal Familias](assets/portal-familias-historial.png)
         <br>
         ![Detalles Registro Familia](assets/portal-familias-detalles.png)
