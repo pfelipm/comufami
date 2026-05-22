@@ -2482,7 +2482,7 @@ function cargarRegistrosGlobal() {
                 }
                 
                 // Poblar filtro de autores
-                const autores = [...new Set(state.allRecords.map(r => r.docente_nombre || r.docente_email))].sort();
+                const autores = [...new Set(state.allRecords.map(r => r.docente_nombre || 'Sin nombre'))].sort();
                 const selectAu = document.getElementById('g-filtro-autor');
                 if (selectAu) {
                     selectAu.innerHTML = '<option value="">Todos los autores</option>';
@@ -2514,7 +2514,7 @@ function filtrarYMostrarRegistrosGlobal() {
                              r.estudiante_nombre.toLowerCase().includes(texto) ||
                              r.id_estudiante.toString().toLowerCase().includes(texto);
         const matchesGrupo = !grupo || r.grupo === grupo;
-        const matchesAutor = !autor || r.docente_nombre === autor || r.docente_email === autor;
+        const matchesAutor = !autor || r.docente_nombre === autor;
         const matchesTipo = !tipo || r.tipo === tipo;
         return matchesTexto && matchesGrupo && matchesAutor && matchesTipo;
     });
