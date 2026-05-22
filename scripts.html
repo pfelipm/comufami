@@ -381,7 +381,7 @@ function cargarEstudiantesDocente() {
             
             // Limpiar antes de añadir
             selectGrupo.innerHTML = '<option value="">Seleccione grupo...</option>';
-            Array.from(gruposSet).sort().forEach(g => {
+            Array.from(gruposSet).sort((a, b) => a.localeCompare(b, 'es')).forEach(g => {
                 selectGrupo.innerHTML += `<option value="${g}">${g}</option>`;
             });
         } else {
@@ -681,7 +681,7 @@ function cargarEstudiantes() {
                 state.allEstudiantes = response.data;
                 
                 // Poblar filtro de grupos
-                const grupos = [...new Set(state.allEstudiantes.map(e => e.grupo))].sort();
+                const grupos = [...new Set(state.allEstudiantes.map(e => e.grupo))].sort((a, b) => a.localeCompare(b, 'es'));
                 const selectGr = document.getElementById('e-filtro-grupo');
                 if (selectGr) {
                     selectGr.innerHTML = '<option value="">Todos los grupos</option>';
@@ -720,9 +720,7 @@ function filtrarYMostrarEstudiantes() {
     filtrados.sort((a, b) => {
         const nomA = a.nombre.toLowerCase();
         const nomB = b.nombre.toLowerCase();
-        if (nomA < nomB) return state.eSortAsc ? -1 : 1;
-        if (nomA > nomB) return state.eSortAsc ? 1 : -1;
-        return 0;
+        return state.eSortAsc ? nomA.localeCompare(nomB, 'es') : nomB.localeCompare(nomA, 'es');
     });
 
     const lista = document.getElementById('estudiantes-lista');
@@ -1198,9 +1196,7 @@ function filtrarYMostrarUsuarios() {
     filtrados.sort((a, b) => {
         const nomA = a.nombre.toLowerCase();
         const nomB = b.nombre.toLowerCase();
-        if (nomA < nomB) return state.uSortAsc ? -1 : 1;
-        if (nomA > nomB) return state.uSortAsc ? 1 : -1;
-        return 0;
+        return state.uSortAsc ? nomA.localeCompare(nomB, 'es') : nomB.localeCompare(nomA, 'es');
     });
 
     const lista = document.getElementById('usuarios-lista');
@@ -1968,7 +1964,7 @@ function cargarRegistrosFamilia() {
                 state.recordsFamilia = response.data;
                 
                 // Poblar filtro de alumnos
-                const alumnos = [...new Set(state.recordsFamilia.map(r => r.estudiante_nombre))].sort();
+                const alumnos = [...new Set(state.recordsFamilia.map(r => r.estudiante_nombre))].sort((a, b) => a.localeCompare(b, 'es'));
                 const selectAl = document.getElementById('filtro-alumno');
                 if (selectAl) {
                     selectAl.innerHTML = '<option value="">Todos</option>';
@@ -2471,7 +2467,7 @@ function cargarRegistrosGlobal() {
                 state.allRecords = response.data;
                 
                 // Poblar filtro de grupos
-                const grupos = [...new Set(state.allRecords.map(r => r.grupo))].sort();
+                const grupos = [...new Set(state.allRecords.map(r => r.grupo))].sort((a, b) => a.localeCompare(b, 'es'));
                 const selectGr = document.getElementById('g-filtro-grupo');
                 if (selectGr) {
                     // Limpiar excepto el primero
@@ -2482,7 +2478,7 @@ function cargarRegistrosGlobal() {
                 }
                 
                 // Poblar filtro de autores
-                const autores = [...new Set(state.allRecords.map(r => r.docente_nombre))].sort();
+                const autores = [...new Set(state.allRecords.map(r => r.docente_nombre))].sort((a, b) => a.localeCompare(b, 'es'));
                 const selectAu = document.getElementById('g-filtro-autor');
                 if (selectAu) {
                     selectAu.innerHTML = '<option value="">Todos los autores</option>';

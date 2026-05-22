@@ -99,8 +99,8 @@ function obtenerEstudiantesDocente() {
 
     // Ordenar por grupo y luego por nombre
     estudiantes.sort((a, b) => {
-      if (a.grupo !== b.grupo) return a.grupo.localeCompare(b.grupo);
-      return a.nombre.localeCompare(b.nombre);
+      if (a.grupo !== b.grupo) return a.grupo.localeCompare(b.grupo, 'es');
+      return a.nombre.localeCompare(b.nombre, 'es');
     });
 
     return { success: true, data: estudiantes };
