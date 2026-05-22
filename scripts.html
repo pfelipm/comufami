@@ -1864,6 +1864,7 @@ function ejecutarLoginFamiliaManual(event) {
 }
 
 function renderDashboardFamiliaGeneral(container) {
+    state.dashboardChartType = 'bar'; // Reset state on view load
     container.innerHTML = `
         <div class="fade-in">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
