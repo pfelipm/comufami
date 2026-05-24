@@ -114,6 +114,7 @@ La instalación de ComuFami se realiza a partir de una plantilla de Google Sheet
     -   Haz clic en *Nuevo despliegue*.
     -   Selecciona el tipo *Aplicación web*.
     -   Configura el acceso para que sea ejecutada por el **usuario que despliega** (tú) y sea accesible para **"Cualquiera"**. Esto es fundamental para que los progenitores puedan acceder al diálogo de inicio de sesión.
+    -   *Recomendación:* Se aconseja realizar el despliegue desde una **cuenta genérica del centro** (por ejemplo, `convivencia@centro.es` o `familias@centro.es`). No obstante, la aplicación ajusta automáticamente el campo "Responder a" (*Reply-to*) de los correos electrónicos enviados para que las respuestas de las familias se dirijan siempre al docente que ha enviado la notificación.
 4.  **Inicialización:** si la estructura no se ha creado automáticamente, puedes ejecutar la función `inicializarApp()` desde el editor de scripts.
 5.  **Ajustes finales:** copia la URL de la aplicación web generada y pégala en la pestaña `Ajustes` bajo el parámetro `APP_WEBAPP_URL`.
 
