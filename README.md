@@ -68,7 +68,7 @@ Sin embargo, debido a las características de estas herramientas, es importante 
         ![Dashboard Familias](assets/portal-familias-gráfica-columnas.png)
         <br>
         ![Detalles Registro Familia](assets/portal-familias-detalles.png)
--   **Configuración del sistema:** panel de ajustes integrado para gestionar la personalización visual (colores, logotipos), parámetros de privacidad (nivel de detalle en correos) y opciones técnicas para administradores (impersonación de usuarios, URLs de despliegue).
+-   **Configuración del sistema:** panel de ajustes integrado para gestionar la personalización visual (colores, logotipos), parámetros de privacidad (nivel de detalle en correos) y opciones técnicas para administradores. El parámetro **`APP_NAME`** es especialmente relevante ya que define el nombre descriptivo del remitente en todos los correos electrónicos enviados a las familias.
     
     ![Panel Ajustes](assets/panel-ajustes.png)
 -   **Modo mantenimiento:** capacidad de pausar el acceso a la webapp para realizar ajustes técnicos.
